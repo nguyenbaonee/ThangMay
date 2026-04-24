@@ -1,7 +1,28 @@
 <script setup>
+import { ref, onMounted } from 'vue'
 import Header from '../components/Header.vue'
 import Footer from '../components/Footer.vue'
 import { Phone } from 'lucide-vue-next'
+import companyContactApi from '@/api/companyContactApi'
+
+const contacts = ref([])
+
+onMounted(async () => {
+  try {
+    const res = await companyContactApi.getPublic()
+    contacts.value = res.data || []
+  } catch (error) {
+    console.error('Error fetching contacts in layout:', error)
+  }
+})
+
+const getVal = (key) => contacts.value.find(c => c.configKey === key)?.configValue || ''
+const defaultHotlineTel = '0345986669'
+const normalizeHotline = (value) => {
+  const cleaned = String(value || '').replace(/\s+/g, '')
+  if (!cleaned || cleaned === '0900000000' || cleaned === '090000000') return '0345986669'
+  return cleaned
+}
 </script>
 
 <template>
@@ -18,10 +39,10 @@ import { Phone } from 'lucide-vue-next'
     
     <!-- Floating Support Buttons -->
     <div class="floating-support">
-      <a href="https://zalo.me/0912345678" target="_blank" class="floating-btn zalo">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Icon_Zalo.png" alt="Zalo" />
+      <a :href="getVal('zalo_url') || 'https://zalo.me/0345986669'" target="_blank" class="floating-btn zalo" title="Chat Zalo">
+        <img src="/images.png" alt="Zalo" style="width: 32px; height: 32px; object-fit: contain;" />
       </a>
-      <a href="tel:0912345678" class="floating-btn phone">
+      <a :href="'tel:' + normalizeHotline(getVal('hotline'))" class="floating-btn phone">
         <Phone :size="24" />
       </a>
     </div>
@@ -65,12 +86,12 @@ import { Phone } from 'lucide-vue-next'
 }
 
 .zalo {
-  background: #0068ff;
-  padding: 8px;
+  background: white !important;
+  padding: 0;
 }
 
-.zalo img {
-  width: 100%;
+.zalo svg {
+  filter: drop-shadow(0 2px 5px rgba(0, 104, 255, 0.3));
 }
 
 .phone {
@@ -87,5 +108,31 @@ import { Phone } from 'lucide-vue-next'
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+@media (max-width: 768px) {
+  .floating-support {
+    bottom: 16px;
+    right: 16px;
+    gap: 0.8rem;
+  }
+
+  .floating-btn {
+    width: 46px;
+    height: 46px;
+  }
+}
+
+@media (max-width: 480px) {
+  .floating-support {
+    bottom: 12px;
+    right: 12px;
+    gap: 0.65rem;
+  }
+
+  .floating-btn {
+    width: 42px;
+    height: 42px;
+  }
 }
 </style>

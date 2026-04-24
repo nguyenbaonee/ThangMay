@@ -12,25 +12,22 @@ const values = [
   <div class="about">
     <section class="subpage-hero">
       <div class="hero-bg">
-        <img src="/images/4c79d40d87e509bb50f4.jpg" alt="About Hero" />
+        <img src="https://images.unsplash.com/photo-1541819361361-b5413156942a?q=80&w=2000" alt="About Hero" />
         <div class="hero-overlay"></div>
       </div>
       <div class="container hero-content text-center">
         <h1>Về Chúng Tôi</h1>
-        <p>Kiến tạo những giá trị bền vững cho không gian sống hiện đại.</p>
+        <p>Hơn một thập kỷ nâng tầm không gian sống Việt.</p>
       </div>
     </section>
 
     <section class="section-padding container">
-      <div class="intro-grid">
+      <div class="intro-grid animate-fade-in">
         <div class="intro-text">
-          <h4 class="label">CÂU CHUYỆN CỦA CHÚNG TÔI</h4>
-          <h2>Hành trình <span class="text-gradient">vươn tới tầm cao</span></h2>
-          <p>
-            Được thành lập với sứ mệnh mang đến những giải pháp thang máy nội thất đẳng cấp cho người Việt, 
-            BaoThangMay đã trải qua hơn một thập kỷ hình thành và phát triển. Mỗi chiếc thang máy lắp đặt là 
-            một cam kết về sự an toàn, tính thẩm mỹ và công nghệ vượt trội.
-          </p>
+          <h4 class="label">CÂU CHUYỆN THƯƠNG HIỆU</h4>
+          <h2>Misel – Sự kết hợp hoàn hảo giữa <br/><span class="text-gradient">Công nghệ & Nghệ thuật</span></h2>
+          <p>Được thành lập với khát vọng mang đến những giải pháp di chuyển an toàn, sang trọng và hiện đại cho các công trình Việt, Misel đã không ngừng nỗ lực để trở thành đối tác tin cậy của hàng nghìn khách hàng trên khắp cả nước.</p>
+          <p>Chúng tôi hiểu rằng, mỗi chiếc thang máy không chỉ là một thiết bị kỹ thuật, mà còn là trái tim của ngôi nhà, là nơi kết nối các thành viên và thể hiện đẳng cấp của gia chủ. Vì vậy, mỗi sản phẩm của Misel đều được cá nhân hóa tối đa theo phong cách kiến trúc và sở thích riêng biệt.</p>
           <div class="milestones">
             <div class="milestone">
               <History :size="32" class="milestone-icon" />
@@ -56,7 +53,7 @@ const values = [
           </div>
         </div>
         <div class="intro-image">
-          <img src="/images/d0ca929ac1724f2c1663.jpg" alt="About BaoThangMay" />
+          <img src="/images/d0ca929ac1724f2c1663.jpg" alt="About Misel" />
         </div>
       </div>
     </section>
@@ -232,6 +229,45 @@ const values = [
   }
   .vision-mission {
     flex-direction: column;
+  }
+}
+
+@media (max-width: 768px) {
+  .subpage-hero {
+    height: 260px;
+  }
+
+  .subpage-hero h1 {
+    font-size: 2rem;
+  }
+
+  .subpage-hero p {
+    font-size: 0.92rem;
+  }
+
+  .intro-text h2 {
+    font-size: 1.8rem;
+  }
+
+  .milestones {
+    margin-top: 2rem;
+    gap: 1.25rem;
+  }
+
+  .milestone {
+    gap: 1rem;
+  }
+
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .value-card {
+    padding: 1.5rem;
+  }
+
+  .box {
+    padding: 1.5rem;
   }
 }
 </style>

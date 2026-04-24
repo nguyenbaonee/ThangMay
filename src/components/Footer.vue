@@ -1,5 +1,25 @@
 <script setup>
 import { MapPin, Phone, Mail, Facebook, Instagram, Linkedin, Send } from 'lucide-vue-next'
+import { ref, onMounted } from 'vue'
+import companyContactApi from '@/api/companyContactApi'
+
+const contacts = ref([])
+onMounted(async () => {
+  try {
+    const res = await companyContactApi.getPublic()
+    contacts.value = res.data || []
+  } catch (error) {
+    console.error('Error fetching footer info:', error)
+  }
+})
+
+const getVal = (key) => contacts.value.find(c => c.configKey === key)?.configValue || ''
+const defaultHotline = '034 598 6669'
+const normalizeHotline = (value) => {
+  const cleaned = String(value || '').replace(/\s+/g, '')
+  if (!cleaned || cleaned === '0900000000' || cleaned === '090000000') return defaultHotline
+  return value
+}
 </script>
 
 <template>
@@ -9,7 +29,7 @@ import { MapPin, Phone, Mail, Facebook, Instagram, Linkedin, Send } from 'lucide
         <!-- Brand -->
         <div class="footer-brand">
           <router-link to="/" class="logo">
-            <span class="logo-text">BaoThangMay</span>
+            <span class="logo-text">Misel</span>
             <span class="logo-subtext">Elevating Living</span>
           </router-link>
           <p class="brand-desc">
@@ -17,9 +37,9 @@ import { MapPin, Phone, Mail, Facebook, Instagram, Linkedin, Send } from 'lucide
             Kiến tạo không gian sống hiện đại, an toàn và sang trọng.
           </p>
           <div class="social-links">
-            <a href="#"><Facebook :size="20" /></a>
-            <a href="#"><Instagram :size="20" /></a>
-            <a href="#"><Linkedin :size="20" /></a>
+            <a :href="getVal('facebook_url') || 'https://web.facebook.com/thangmaymisel/?_rdc=1&_rdr#'" target="_blank"><Facebook :size="20" /></a>
+            <a :href="getVal('instagram_url') || '#'"><Instagram :size="20" /></a>
+            <a :href="getVal('linkedin_url') || '#'"><Linkedin :size="20" /></a>
           </div>
         </div>
 
@@ -50,15 +70,19 @@ import { MapPin, Phone, Mail, Facebook, Instagram, Linkedin, Send } from 'lucide
           <ul class="contact-info">
             <li>
               <MapPin :size="20" class="icon" />
-              <span>Số 123 Đường Láng, Quận Đống Đa, Hà Nội</span>
+              <span>{{ getVal('address') || 'Số 12 Hẻm 35/7/1 Tu Hoàng, P. Xuân Phương, Hà Nội' }}</span>
+            </li>
+            <li v-if="getVal('address_2')">
+              <MapPin :size="20" class="icon" />
+              <span>{{ getVal('address_2') }}</span>
             </li>
             <li>
               <Phone :size="20" class="icon" />
-              <span>0912.345.678</span>
+               <span>{{ normalizeHotline(getVal('hotline')) }}</span>
             </li>
             <li>
               <Mail :size="20" class="icon" />
-              <span>info@baothangmay.vn</span>
+              <span>{{ getVal('email') || 'info@thangmaymisel.com' }}</span>
             </li>
           </ul>
           <div class="newsletter">
@@ -72,7 +96,7 @@ import { MapPin, Phone, Mail, Facebook, Instagram, Linkedin, Send } from 'lucide
     <!-- Bottom -->
     <div class="footer-bottom">
       <div class="container bottom-content">
-        <p>&copy; 2024 BaoThangMay ELEVATOR. All rights reserved.</p>
+        <p>&copy; 2024 Misel ELEVATOR. All rights reserved.</p>
         <div class="bottom-links">
           <a href="#">Điều khoản sử dụng</a>
           <a href="#">Chính sách bảo mật</a>
@@ -238,6 +262,7 @@ import { MapPin, Phone, Mail, Facebook, Instagram, Linkedin, Send } from 'lucide
   .footer-grid {
     grid-template-columns: 1fr;
     text-align: center;
+    gap: 2rem;
   }
   .footer-links h3::after, .footer-contact h3::after {
     left: 50%;
@@ -246,8 +271,51 @@ import { MapPin, Phone, Mail, Facebook, Instagram, Linkedin, Send } from 'lucide
   .contact-info li {
     justify-content: center;
   }
+  .social-links {
+    justify-content: center;
+  }
   .bottom-content {
     justify-content: center;
+    text-align: center;
+  }
+  .bottom-links {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer {
+    padding-top: 56px;
+  }
+
+  .footer-grid {
+    padding-bottom: 40px;
+  }
+
+  .footer-links h3, .footer-contact h3 {
+    margin-bottom: 1.25rem;
+  }
+
+  .social-links {
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .newsletter {
+    flex-direction: column;
+  }
+
+  .newsletter input {
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+  }
+
+  .newsletter-btn {
+    width: 100%;
+    border-radius: 4px;
+    min-height: 46px;
   }
 }
 </style>

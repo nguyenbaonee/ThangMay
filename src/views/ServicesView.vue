@@ -1,30 +1,51 @@
 <script setup>
-import { Settings, Zap, ShieldCheck, Headphones, Construction, RefreshCw, MessageCircle } from 'lucide-vue-next'
+import { Settings, Zap, ShieldCheck, Headphones, Construction, RefreshCw, MessageCircle, Phone } from 'lucide-vue-next'
+import { ref, onMounted } from 'vue'
+import companyContactApi from '@/api/companyContactApi'
+
+const contacts = ref([])
+onMounted(async () => {
+  try {
+    const res = await companyContactApi.getPublic()
+    contacts.value = res.data || []
+  } catch (error) {
+    console.error('Error fetching contacts:', error)
+  }
+})
+
+const getVal = (key) => contacts.value.find(c => c.configKey === key)?.configValue || ''
+const defaultHotline = '034 598 6669'
+const normalizeHotline = (value) => {
+  const cleaned = String(value || '').replace(/\s+/g, '')
+  if (!cleaned || cleaned === '0900000000' || cleaned === '090000000') return defaultHotline
+  return value
+}
+const resolveHotlineTel = (value) => String(normalizeHotline(value)).replace(/\s+/g, '')
 
 const coreServices = [
   { 
     title: 'Tư vấn & Thiết kế', 
     icon: Settings, 
-    image: '/images/3726039324607881804 (6).jpg',
-    desc: 'Lắng nghe nhu cầu và khảo sát thực tế để mang đến bản thiết kế 3D tối ưu công năng và thẩm mỹ, phù hợp với kiến trúc tổng thể.'
+    image: 'https://images.unsplash.com/photo-1541819361361-b5413156942a?q=80&w=1000',
+    desc: 'Chúng tôi lắng nghe nhu cầu của bạn để đưa ra giải pháp thang máy tối ưu nhất về công năng và thẩm mỹ.'
   },
   { 
-    title: 'Lắp đặt chuyên nghiệp', 
+    title: 'Cung cấp & Lắp đặt', 
     icon: Construction, 
-    image: '/images/3726039324607881804.jpg',
-    desc: 'Quy trình lắp đặt chuẩn ISO, được thực hiện bởi đội ngũ kỹ sư lành nghề, đảm bảo an toàn tuyệt đối và đúng tiến độ cam kết.'
+    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1000',
+    desc: 'Quy trình thi công chuyên nghiệp, đảm bảo an toàn tuyệt đối và đúng tiến độ cam kết.'
   },
   { 
-    title: 'Bảo trì & Bảo dưỡng', 
+    title: 'Bảo trì & Sửa chữa', 
     icon: ShieldCheck, 
-    image: '/images/3653228387362596575 (1).jpg',
-    desc: 'Dịch vụ bảo trì định kỳ 1-2 tháng/lần, giúp thang máy luôn vận hành êm ái, kéo dài tuổi thọ linh kiện và phát hiện sớm các rủi ro.'
+    image: 'https://images.unsplash.com/photo-1541819361361-b5413156942a?q=80&w=1000',
+    desc: 'Dịch vụ hậu mãi chu đáo, hỗ trợ kỹ thuật 24/7 giúp thang máy luôn vận hành ổn định.'
   },
   { 
-    title: 'Sửa chữa & Nâng cấp', 
+    title: 'Nâng cấp & Cải tạo', 
     icon: RefreshCw, 
-    image: '/images/3653228387362596575 (2).jpg',
-    desc: 'Khắc phục sự cố nhanh chóng 24/7. Tư vấn nâng cấp nội thất, thay thế linh kiện lỗi thời bằng công nghệ mới nhất cho thang cũ.'
+    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1000',
+    desc: 'Làm mới không gian nội thất cabin và nâng cấp công nghệ cho các dòng thang máy cũ.'
   }
 ]
 </script>
@@ -33,7 +54,7 @@ const coreServices = [
   <div class="services">
     <section class="subpage-hero">
       <div class="hero-bg">
-        <img src="/images/56463040787009741 (1).jpg" alt="Services Hero" />
+        <img src="https://images.unsplash.com/photo-1541819361361-b5413156942a?q=80&w=2000" alt="Services Hero" />
         <div class="hero-overlay"></div>
       </div>
       <div class="container hero-content text-center">
@@ -64,8 +85,8 @@ const coreServices = [
         <h2 class="mb-4">Hỗ trợ kỹ thuật khẩn cấp 24/7</h2>
         <p class="mb-5 opacity-0.9">Bạn gặp sự cố với thang máy? Đừng ngần ngại gọi ngay cho đội ngũ cứu hộ của chúng tôi.</p>
         <div class="flex-center gap-2">
-            <a href="tel:0912345678" class="btn btn-white lg"><Phone :size="20" /> 0912.345.678</a>
-            <a href="https://zalo.me/0912345678" target="_blank" class="btn btn-outline-white lg">Chat qua Zalo</a>
+            <a :href="'tel:' + resolveHotlineTel(getVal('hotline'))" class="btn btn-white lg"><Phone :size="20" /> {{ normalizeHotline(getVal('hotline')) }}</a>
+            <a :href="getVal('zalo_url') || 'https://zalo.me/0345986669'" target="_blank" class="btn btn-outline-white lg">Chat qua Zalo</a>
         </div>
       </div>
     </section>
@@ -193,6 +214,54 @@ const coreServices = [
   .block-image {
     width: 100%;
     height: 300px;
+  }
+}
+
+@media (max-width: 768px) {
+  .subpage-hero {
+    height: 260px;
+  }
+
+  .subpage-hero h1 {
+    font-size: 2rem;
+  }
+
+  .subpage-hero p {
+    font-size: 0.92rem;
+  }
+
+  .service-block, .service-block.reverse {
+    gap: 1.5rem;
+    margin-bottom: 72px;
+  }
+
+  .block-image {
+    height: 230px;
+    border-radius: 14px;
+  }
+
+  .icon-circle {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 1.25rem;
+  }
+
+  .block-text h2 {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+  }
+
+  .block-text p {
+    font-size: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .flex-center {
+    gap: 0.75rem;
+  }
+
+  .flex-center .btn {
+    width: 100%;
   }
 }
 </style>

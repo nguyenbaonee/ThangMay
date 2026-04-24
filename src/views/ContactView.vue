@@ -1,24 +1,61 @@
 <script setup>
-import { MapPin, Phone, Mail, Send, Facebook, Instagram, Linkedin, MessageCircle } from 'lucide-vue-next'
-import { ref } from 'vue'
+import { MapPin, Phone, Mail, Send, Facebook, Instagram, Linkedin, Loader2 } from 'lucide-vue-next'
+import { ref, onMounted } from 'vue'
+import contactApi from '@/api/contactApi'
+import companyContactApi from '@/api/companyContactApi'
+import { toast } from 'vue3-toastify'
 
+const isSubmitting = ref(false)
+const contacts = ref([])
+const defaultHotline = '034 598 6669'
+const normalizeHotline = (value) => {
+  const cleaned = String(value || '').replace(/\s+/g, '')
+  if (!cleaned || cleaned === '0900000000' || cleaned === '090000000') return defaultHotline
+  return value
+}
+
+onMounted(async () => {
+  try {
+    const res = await companyContactApi.getPublic()
+    contacts.value = res.data || []
+  } catch (error) {
+    console.error('Error fetching contacts:', error)
+  }
+})
+
+const getVal = (key) => contacts.value.find(c => c.configKey === key)?.configValue || ''
 const formData = ref({
-  name: '',
-  phone: '',
+  fullName: '',
+  phoneNumber: '',
   email: '',
-  service: 'Tư vấn lắp đặt',
+  subject: 'Tư vấn lắp đặt',
   message: ''
 })
 
-const submitForm = () => {
-    alert('Cảm ơn bạn đã gửi liên hệ! Chúng tôi sẽ phản hồi trong vòng 24h.')
+const submitForm = async () => {
+  isSubmitting.value = true
+  try {
+    await contactApi.create({
+      fullName: formData.value.fullName,
+      phone: formData.value.phoneNumber,
+      email: formData.value.email,
+      subject: formData.value.subject,
+      message: formData.value.message
+    })
+    toast.success('Cảm ơn bạn đã gửi liên hệ! Chúng tôi sẽ phản hồi sớm nhất.')
     formData.value = {
-        name: '',
-        phone: '',
-        email: '',
-        service: 'Tư vấn lắp đặt',
-        message: ''
+      fullName: '',
+      phoneNumber: '',
+      email: '',
+      subject: 'Tư vấn lắp đặt',
+      message: ''
     }
+  } catch (error) {
+    console.error('Error submitting contact:', error)
+    toast.error('Có lỗi xảy ra, vui lòng thử lại sau.')
+  } finally {
+    isSubmitting.value = false
+  }
 }
 </script>
 
@@ -26,7 +63,7 @@ const submitForm = () => {
   <div class="contact">
     <section class="subpage-hero">
       <div class="hero-bg">
-        <img src="/images/3726039324607881804 (6).jpg" alt="Contact Hero" />
+        <img src="https://images.unsplash.com/photo-1541819361361-b5413156942a?q=80&w=2000" alt="Contact Hero" />
         <div class="hero-overlay"></div>
       </div>
       <div class="container hero-content text-center">
@@ -40,7 +77,7 @@ const submitForm = () => {
         <!-- Contact Info -->
         <div class="contact-info-side">
           <h4 class="label">THÔNG TIN LIÊN HỆ</h4>
-          <h2>Kết nối với <span class="text-gradient">BaoThangMay</span></h2>
+          <h2>Kết nối với <span class="text-gradient">Misel</span></h2>
           <p class="mb-5">Chúng tôi luôn sẵn sàng lắng nghe và tư vấn giải pháp tốt nhất cho nhu cầu của bạn. Đừng ngần ngại liên hệ qua các kênh dưới đây:</p>
           
           <div class="info-cards">
@@ -48,23 +85,22 @@ const submitForm = () => {
               <MapPin :size="24" class="icon" />
               <div>
                 <h3>Địa chỉ</h3>
-                <p>Số 123 Đường Láng, Quận Đống Đa, Hà Nội</p>
+                <p><strong>Trụ sở chính:</strong> {{ getVal('address') || 'Số 12 Hẻm 35/7/1 Tu Hoàng, P. Xuân Phương, Hà Nội' }}</p>
+                <p v-if="getVal('address_2')"><strong>Chi nhánh 2:</strong> {{ getVal('address_2') }}</p>
               </div>
             </div>
             <div class="info-card glass">
               <Phone :size="24" class="icon" />
               <div>
                 <h3>Hotline 24/7</h3>
-                <p>0912.345.678 (Kỹ thuật)</p>
-                <p>0988.777.666 (Kinh doanh)</p>
+                <p>Hotline: {{ normalizeHotline(getVal('hotline')) }}</p>
               </div>
             </div>
             <div class="info-card glass">
               <Mail :size="24" class="icon" />
               <div>
                 <h3>Email</h3>
-                <p>info@baothangmay.vn</p>
-                <p>sales@baothangmay.vn</p>
+                <p>{{ getVal('email') || 'info@thangmaymisel.com' }}</p>
               </div>
             </div>
           </div>
@@ -72,30 +108,30 @@ const submitForm = () => {
           <div class="social-connect mt-5">
             <h3>Theo dõi chúng tôi</h3>
             <div class="social-btns">
-              <a href="#" class="social-btn fb"><Facebook :size="20" /></a>
-              <a href="#" class="social-btn ig"><Instagram :size="20" /></a>
-              <a href="#" class="social-btn li"><Linkedin :size="20" /></a>
-              <a href="https://zalo.me/0912345678" target="_blank" class="social-btn zalo">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/9/91/Icon_Zalo.png" alt="Zalo" width="20" />
+              <a :href="getVal('facebook_url') || 'https://web.facebook.com/thangmaymisel'" target="_blank" class="social-btn fb"><Facebook :size="20" /></a>
+              <a :href="getVal('instagram_url') || '#'" target="_blank" class="social-btn ig"><Instagram :size="20" /></a>
+              <a :href="getVal('linkedin_url') || '#'" target="_blank" class="social-btn li"><Linkedin :size="20" /></a>
+              <a :href="getVal('zalo_url') || 'https://zalo.me/0345986669'" target="_blank" class="social-btn zalo">
+                <img src="/images.png" alt="Zalo" style="width: 24px; height: 24px; object-fit: contain;" />
               </a>
             </div>
           </div>
         </div>
 
         <!-- Contact Form -->
-        <div class="contact-form-side glass">
+        <div class="contact-form-side glass animate-fade-in">
           <h3>Gửi yêu cầu tư vấn</h3>
           <p class="mb-4">Vui lòng để lại thông tin, chuyên viên của chúng tôi sẽ gọi lại ngay để báo giá chi tiết.</p>
           
           <form @submit.prevent="submitForm">
             <div class="form-group">
                 <label>Họ và tên *</label>
-                <input type="text" v-model="formData.name" placeholder="Nhập họ tên của bạn" required />
+                <input type="text" v-model="formData.fullName" placeholder="Nhập họ tên của bạn" required />
             </div>
             <div class="form-row">
                 <div class="form-group">
                     <label>Số điện thoại *</label>
-                    <input type="tel" v-model="formData.phone" placeholder="VD: 0912345678" required />
+                    <input type="tel" v-model="formData.phoneNumber" placeholder="VD: 0912345678" required />
                 </div>
                 <div class="form-group">
                     <label>Email (nếu có)</label>
@@ -104,19 +140,23 @@ const submitForm = () => {
             </div>
             <div class="form-group">
                 <label>Dịch vụ quan tâm</label>
-                <select v-model="formData.service">
-                    <option>Tư vấn lắp đặt</option>
-                    <option>Báo giá thang máy gia đình</option>
-                    <option>Bảo trì - Bảo dưỡng</option>
-                    <option>Sửa chữa - Nâng cấp</option>
-                    <option>Hợp tác đại lý</option>
+                <select v-model="formData.subject">
+                    <option value="Tư vấn lắp đặt">Tư vấn lắp đặt</option>
+                    <option value="Báo giá thang máy">Báo giá thang máy gia đình</option>
+                    <option value="Bảo trì - Bảo dưỡng">Bảo trì - Bảo dưỡng</option>
+                    <option value="Sửa chữa - Nâng cấp">Sửa chữa - Nâng cấp</option>
+                    <option value="Hợp tác đại lý">Hợp tác đại lý</option>
                 </select>
             </div>
             <div class="form-group">
                 <label>Ghi chú yêu cầu</label>
                 <textarea v-model="formData.message" rows="4" placeholder="VD: Tôi muốn lắp thang máy kính cho nhà 4 tầng..."></textarea>
             </div>
-            <button type="submit" class="btn btn-primary w-full lg"><Send :size="18" /> Gửi liên hệ ngay</button>
+            <button type="submit" class="btn btn-primary w-full lg" :disabled="isSubmitting">
+                <Loader2 v-if="isSubmitting" class="spinner" :size="18" />
+                <Send v-else :size="18" />
+                Gửi liên hệ ngay
+            </button>
           </form>
         </div>
       </div>
@@ -125,7 +165,15 @@ const submitForm = () => {
     <!-- Map -->
     <section class="map-section section-padding">
         <div class="container overflow-hidden rounded-20 shadow-lg">
-            <iframe 
+            <iframe v-if="getVal('map_embed_url')"
+                :src="getVal('map_embed_url')" 
+                width="100%" 
+                height="450" 
+                style="border:0;" 
+                allowfullscreen="" 
+                loading="lazy">
+            </iframe>
+            <iframe v-else
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3724.0854441674482!2d105.815228!3d21.03!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135ab6ad5a88c79%3A0x9f53e070c793664d!2zMTIzIMSQxrDhu51uZyBMw6FuZywgSOG6o2kgQsOgIFRyxrBuZywgSMOgIE7hu5lpLCBWaeG7h3QgTmFt!5e0!3m2!1svi!2s!4v1710000000000!5m2!1svi!2s" 
                 width="100%" 
                 height="450" 
@@ -290,10 +338,23 @@ input:focus, select:focus, textarea:focus {
 
 button[type="submit"] {
     margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
 }
 
 .rounded-20 {
     border-radius: 20px;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @media (max-width: 992px) {
@@ -304,6 +365,59 @@ button[type="submit"] {
   .form-row {
       grid-template-columns: 1fr;
       gap: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .subpage-hero {
+    height: 260px;
+  }
+
+  .subpage-hero h1 {
+    font-size: 2rem;
+  }
+
+  .subpage-hero p {
+    font-size: 0.92rem;
+  }
+
+  .contact-info-side h2 {
+    font-size: 1.9rem;
+  }
+
+  .info-card {
+    padding: 1.25rem;
+    gap: 1rem;
+  }
+
+  .contact-form-side {
+    padding: 1.5rem;
+    border-radius: 16px;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  input, select, textarea {
+    padding: 0.9rem;
+  }
+
+  button[type="submit"] {
+    width: 100%;
+  }
+
+  .social-btns {
+    flex-wrap: wrap;
+  }
+
+  .social-btn {
+    width: 42px;
+    height: 42px;
+  }
+
+  iframe {
+    height: 320px;
   }
 }
 </style>

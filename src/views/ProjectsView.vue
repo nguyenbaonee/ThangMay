@@ -1,51 +1,30 @@
 <script setup>
-import { MapPin, Calendar, ExternalLink } from 'lucide-vue-next'
+import { MapPin, Calendar, ExternalLink, Loader2 } from 'lucide-vue-next'
+import { onMounted, ref } from 'vue'
+import postApi from '@/api/postApi'
 
-const projects = [
-  { 
-    id: 1, 
-    title: 'Biệt thự Riviera Point Quận 7', 
-    customer: 'Anh Minh', 
-    date: 'Tháng 12/2023',
-    location: 'TP. Hồ Chí Minh',
-    image: '/images/3726039324607881804.jpg',
-    desc: 'Lắp đặt hệ thống thang máy kính tròn nhập khẩu nguyên chiếc từ Thụy Điển.'
-  },
-  { 
-    id: 2, 
-    title: 'Căn hộ Shophouse Sala Thủ Thiêm', 
-    customer: 'Chị Lan', 
-    date: 'Tháng 10/2023',
-    location: 'TP. Thủ Đức',
-    image: '/images/3726039324607881804 (3).jpg',
-    desc: 'Giải pháp thang máy gia đình không hố Pit cho nhà phố thương mại.'
-  },
-  { 
-    id: 3, 
-    title: 'Penhouse Vinhomes Central Park', 
-    customer: 'Tập đoàn ABC', 
-    date: 'Tháng 08/2023',
-    location: 'Bình Thạnh, TP.HCM',
-    image: '/images/3726039324607881804 (4).jpg',
-    desc: 'Thang máy nội thất Inox gương vàng cực kỳ sang trọng phục vụ căn hộ cao cấp.'
-  },
-  { 
-    id: 4, 
-    title: 'Khách sạn Boutique Hotel Đà Lạt', 
-    customer: 'Anh Hoàng', 
-    date: 'Tháng 05/2023',
-    location: 'Lâm Đồng',
-    image: '/images/3726039324607881804 (1).jpg',
-    desc: 'Hệ thống 2 thang máy tải khách đồng bộ phục vụ khách sạn 4 sao.'
+const isLoading = ref(true)
+const projects = ref([])
+
+const fetchProjects = async () => {
+  try {
+    const res = await postApi.search({ type: 'PROJECT', status: 'PUBLISHED' })
+    projects.value = res.data?.content || res.data?.items || res.data || []
+  } catch (error) {
+    console.error('Error fetching projects:', error)
+  } finally {
+    isLoading.value = false
   }
-]
+}
+
+onMounted(fetchProjects)
 </script>
 
 <template>
   <div class="projects">
     <section class="subpage-hero">
       <div class="hero-bg">
-        <img src="/images/3726039324607881804 (2).jpg" alt="Projects Hero" />
+        <img src="https://images.unsplash.com/photo-1541819361361-b5413156942a?q=80&w=2000" alt="Projects Hero" />
         <div class="hero-overlay"></div>
       </div>
       <div class="container hero-content text-center">
@@ -54,21 +33,27 @@ const projects = [
       </div>
     </section>
 
-    <section class="section-padding container">
-      <div class="grid-2">
+    <section class="section-padding container min-h-300">
+      <div v-if="isLoading" class="flex-center py-5">
+        <Loader2 class="spinner text-primary" :size="48" />
+      </div>
+      <div v-else class="grid-2">
+        <div v-if="projects.length === 0" class="col-span-full py-5 text-center text-muted">
+          Chưa có dự án nào được cập nhật.
+        </div>
         <div v-for="project in projects" :key="project.id" class="project-box animate-fade-in">
           <div class="box-image">
-            <img :src="project.image" :alt="project.title" />
+            <img :src="project.thumbnail?.publicUrl || project.thumbnail?.url || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1000'" :alt="project.title" />
             <div class="overlay-info">
-              <span class="location"><MapPin :size="14" /> {{ project.location }}</span>
-              <span class="date"><Calendar :size="14" /> {{ project.date }}</span>
+              <!-- Post categories or metadata can be used here -->
+              <span class="location"><MapPin :size="14" /> {{ project.category?.name || project.category?.slug || project.category || 'Dự án tiêu biểu' }}</span>
+              <span class="date"><Calendar :size="14" /> {{ project.createdAt ? new Date(project.createdAt).toLocaleDateString() : '2023' }}</span>
             </div>
           </div>
           <div class="box-content">
             <h3>{{ project.title }}</h3>
-            <p class="customer">Khách hàng: <strong>{{ project.customer }}</strong></p>
-            <p>{{ project.desc }}</p>
-            <router-link to="/projects" class="btn-link">Chi tiết dự án <ExternalLink :size="14" /></router-link>
+            <p v-if="project.summary" class="truncate-2">{{ project.summary }}</p>
+            <router-link :to="project.slug ? '/projects/' + project.slug : '/projects'" class="btn-link mt-3">Chi tiết dự án <ExternalLink :size="14" /></router-link>
           </div>
         </div>
       </div>
@@ -78,11 +63,11 @@ const projects = [
     <section class="bg-light section-padding">
         <div class="container text-center mb-5">
             <h4 class="label">PHẢN HỒI</h4>
-            <h2>Khách hàng nói gì về <span class="text-gradient">BaoThangMay</span></h2>
+            <h2>Khách hàng nói gì về <span class="text-gradient">Misel</span></h2>
         </div>
         <div class="container grid-3">
             <div class="testimonial-card glass">
-                <p>"Tôi rất hài lòng với sự tư vấn tận tình của đội ngũ kỹ sư BaoThangMay. Chiếc thang máy kính thực sự là điểm nhấn cho ngôi nhà của tôi."</p>
+                <p>"Tôi rất hài lòng với sự tư vấn tận tình của đội ngũ kỹ sư Misel. Chiếc thang máy kính thực sự là điểm nhấn cho ngôi nhà của tôi."</p>
                 <div class="user p-3">
                     <strong>Anh Minh</strong>
                     <span>Chủ biệt thự Riviera</span>
@@ -96,7 +81,7 @@ const projects = [
                 </div>
             </div>
             <div class="testimonial-card glass">
-                <p>"Giải pháp không hố Pit của BaoThangMay đã giúp tôi lắp được thang máy cho căn nhà cũ mà không cần cải tạo quá nhiều."</p>
+                <p>"Giải pháp không hố Pit của Misel đã giúp tôi lắp được thang máy cho căn nhà cũ mà không cần cải tạo quá nhiều."</p>
                 <div class="user p-3">
                     <strong>Chú Bảy</strong>
                     <span>Quận 3, TP.HCM</span>
@@ -150,6 +135,9 @@ const projects = [
     background: white;
     box-shadow: 0 5px 20px rgba(0,0,0,0.05);
     transition: var(--transition);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .project-box:hover {
@@ -196,6 +184,9 @@ const projects = [
 
 .box-content {
     padding: 2.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .box-content h3 {
@@ -204,14 +195,17 @@ const projects = [
     color: var(--secondary);
 }
 
-.customer {
-    color: var(--primary);
+.box-content p {
+    color: var(--text-light);
     margin-bottom: 1.5rem;
 }
 
-.box-content p:last-of-type {
-    color: var(--text-light);
-    margin-bottom: 2rem;
+.truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .btn-link {
@@ -220,6 +214,7 @@ const projects = [
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    margin-top: auto;
 }
 
 .testimonial-card {
@@ -251,9 +246,71 @@ const projects = [
     color: var(--primary);
 }
 
+.min-h-300 {
+  min-height: 300px;
+}
+
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 @media (max-width: 992px) {
   .grid-2 {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .subpage-hero {
+    height: 260px;
+  }
+
+  .subpage-hero h1 {
+    font-size: 2rem;
+  }
+
+  .subpage-hero p {
+    font-size: 0.92rem;
+  }
+
+  .grid-2,
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+
+  .box-image {
+    height: 220px;
+  }
+
+  .overlay-info {
+    padding: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
+  .box-content {
+    padding: 1.25rem;
+  }
+
+  .testimonial-card {
+    padding: 1.5rem;
+  }
+
+  .testimonial-card p {
+    font-size: 1rem;
+    margin-bottom: 1.25rem;
   }
 }
 </style>

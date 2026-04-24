@@ -1,11 +1,16 @@
 <script setup>
-import { ArrowRight, Settings, ShieldCheck, Headphones, Zap } from 'lucide-vue-next'
+import { onMounted, ref } from 'vue'
+import { ArrowRight, Settings, ShieldCheck, Headphones, Zap, Loader2 } from 'lucide-vue-next'
+import productApi from '@/api/productApi'
+import bannerApi from '@/api/bannerApi'
 
-const featuredProducts = [
-  { id: 1, name: 'Thang máy gia đình', image: '/images/3653228387362596575.jpg', desc: 'Thiết kế sang trọng, tối ưu không gian.' },
-  { id: 2, name: 'Thang máy biệt thự', image: '/images/3726039324607881804 (1).jpg', desc: 'Đẳng cấp vượt trội cho ngôi nhà của bạn.' },
-  { id: 3, name: 'Thang máy kinh doanh', image: '/images/56463040787009741.jpg', desc: 'Hiệu suất cao, bền bỉ theo thời gian.' }
-]
+const isLoading = ref(true)
+const featuredProducts = ref([])
+const homeBanners = ref([])
+const activeBannerIndex = ref(0)
+
+const resolveProducts = (payload) => payload?.content || payload?.items || payload || []
+const resolveImageUrl = (product) => product?.thumbnail?.publicUrl || product?.thumbnail?.url || product?.images?.[0] || '/images/placeholder.jpg'
 
 const services = [
   { title: 'Tư vấn - Thiết kế', icon: Settings, desc: 'Giải pháp tối ưu theo thực trạng công trình.' },
@@ -13,22 +18,66 @@ const services = [
   { title: 'Bảo trì trọn đời', icon: ShieldCheck, desc: 'An tâm sử dụng với dịch vụ bảo trì 24/7.' },
   { title: 'Hỗ trợ kỹ thuật', icon: Headphones, desc: 'Luôn sẵn sàng giải đáp mọi thắc mắc của khách hàng.' }
 ]
+
+const fetchData = async () => {
+  isLoading.value = true
+  try {
+    const [prodRes, bannerRes] = await Promise.all([
+      productApi.featured(),
+      bannerApi.getPublic('CENTER')
+    ])
+    featuredProducts.value = resolveProducts(prodRes.data)
+    homeBanners.value = bannerRes.data || []
+  } catch (error) {
+    console.error('Error fetching home data:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+onMounted(fetchData)
 </script>
 
 <template>
   <div class="home">
     <!-- Hero Section -->
     <section class="hero">
-      <div class="hero-bg">
-        <img src="/images/56bde9f9ba11344f6d00.jpg" alt="Hero Background" />
-        <div class="hero-overlay"></div>
-      </div>
-      <div class="container hero-content animate-fade-in">
-        <h1 class="hero-title">Kiến Tạo Không Gian <span class="text-gradient">Nâng Tầm Cuộc Sống</span></h1>
-        <p class="hero-subtitle">BaoThangMay - Đơn vị hàng đầu cung cấp giải pháp thang máy cao cấp cho gia đình, biệt thự và các công trình dân dụng tại Việt Nam.</p>
-        <div class="hero-btns">
-          <router-link to="/products" class="btn btn-primary">Khám phá sản phẩm</router-link>
-          <router-link to="/contact" class="btn btn-outline">Nhận tư vấn ngay</router-link>
+      <template v-if="homeBanners.length > 0">
+        <div
+          v-for="(banner, index) in homeBanners"
+          :key="banner.id"
+          v-show="activeBannerIndex === index"
+          class="hero-bg animate-fade-in"
+        >
+          <img :src="banner.imageUrl" :alt="banner.title" loading="lazy" />
+          <div class="hero-overlay"></div>
+        </div>
+        <!-- Simple Dots if multiple banners -->
+        <div v-if="homeBanners.length > 1" class="hero-dots">
+            <span v-for="(_, i) in homeBanners" :key="i" :class="['dot', activeBannerIndex === i ? 'active' : '']" @click="activeBannerIndex = i"></span>
+        </div>
+      </template>
+      <template v-else>
+        <div class="hero-bg">
+          <img src="https://images.unsplash.com/photo-1541819361361-b5413156942a?q=80&w=2000" alt="Thang máy gia đình Misel đẳng cấp Châu Âu" loading="lazy" />
+          <div class="hero-overlay"></div>
+        </div>
+        </template>
+      <div class="hero-copy">
+        <div class="container hero-content animate-fade-in">
+          <h1 v-if="homeBanners.length > 0" class="hero-title">
+            {{ homeBanners[activeBannerIndex]?.title || 'Kiến Tạo Không Gian Nâng Tầm Cuộc Sống' }}
+          </h1>
+          <h1 v-else class="hero-title">
+            Kiến Tạo Không Gian <span class="text-gradient">Nâng Tầm Cuộc Sống</span>
+          </h1>
+          <p v-if="homeBanners.length === 0" class="hero-subtitle">
+            Misel - Đơn vị hàng đầu cung cấp giải pháp thang máy cao cấp cho gia đình, biệt thự và các công trình dân dụng tại Việt Nam.
+          </p>
+          <div class="hero-btns">
+            <router-link :to="homeBanners.length > 0 ? (homeBanners[activeBannerIndex]?.linkUrl || '/products') : '/products'" class="btn btn-primary">Khám phá ngay</router-link>
+            <router-link to="/contact" class="btn btn-outline">Nhận tư vấn</router-link>
+          </div>
         </div>
       </div>
     </section>
@@ -37,12 +86,12 @@ const services = [
     <section class="section-padding intro">
       <div class="container flex-row gap-4">
         <div class="intro-image">
-          <img src="/images/d0ca929ac1724f2c1663.jpg" alt="BaoThangMay Office" />
+          <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2000" alt="Dự án lắp đặt Thang máy kính tại biệt thự cao cấp" loading="lazy" />
         </div>
         <div class="intro-text">
           <h4 class="label">VỀ CHÚNG TÔI</h4>
           <h2>Giải pháp chuyển động <br/><span class="text-gradient">An toàn & Đẳng cấp</span></h2>
-          <p>Tại BaoThangMay, chúng tôi không chỉ cung cấp một phương tiện di chuyển, mà còn mang đến trải nghiệm nghệ thuật không gian. Mỗi chiếc thang máy là một tác phẩm được thiết kế tỉ mỉ, kết hợp công nghệ hiện đại nhất của Châu Âu with sự tinh tế trong từng đường nét nội thất.</p>
+          <p>Tại Misel, chúng tôi không chỉ cung cấp một phương tiện di chuyển, mà còn mang đến trải nghiệm nghệ thuật không gian. Mỗi chiếc thang máy là một tác phẩm được thiết kế tỉ mỉ, kết hợp công nghệ hiện đại nhất của Châu Âu with sự tinh tế trong từng đường nét nội thất.</p>
           <div class="stats-grid">
             <div class="stat-item">
               <span class="stat-num">10+</span>
@@ -85,15 +134,20 @@ const services = [
         <h4 class="label">SẢN PHẨM NỔI BẬT</h4>
         <h2>Thang máy <span class="text-gradient">dẫn đầu xu hướng</span></h2>
       </div>
-      <div class="container grid-3">
-        <div v-for="product in featuredProducts" :key="product.id" class="product-card">
-          <div class="product-img">
-            <img :src="product.image" :alt="product.name" />
-          </div>
-          <div class="product-info">
-            <h3>{{ product.name }}</h3>
-            <p>{{ product.desc }}</p>
-            <router-link :to="'/products/' + product.id" class="link-more">Xem chi tiết <ArrowRight :size="14" /></router-link>
+      <div class="container">
+        <div v-if="isLoading" class="flex-center py-5">
+          <Loader2 class="spinner text-primary" :size="48" />
+        </div>
+        <div v-else class="grid-3">
+          <div v-for="product in featuredProducts" :key="product.id" class="product-card">
+            <div class="product-img">
+              <img :src="resolveImageUrl(product)" :alt="product.name || 'Sản phẩm nổi bật'" />
+            </div>
+            <div class="product-info">
+              <h3>{{ product.name || 'Chưa có tiêu đề' }}</h3>
+              <p class="truncate-2">{{ product.summary || product.desc || 'Chưa có mô tả ngắn.' }}</p>
+              <router-link :to="'/products/' + product.id" class="link-more">Xem chi tiết <ArrowRight :size="14" /></router-link>
+            </div>
           </div>
         </div>
       </div>
@@ -114,11 +168,10 @@ const services = [
 
 <style scoped>
 .hero {
-  height: 100vh;
-  display: flex;
-  align-items: center;
+  min-height: 100vh;
   position: relative;
   color: white;
+  overflow: hidden;
 }
 
 .hero-bg {
@@ -126,8 +179,8 @@ const services = [
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
-  z-index: -1;
+  height: 72vh;
+  z-index: 0;
 }
 
 .hero-bg img {
@@ -147,24 +200,76 @@ const services = [
 
 .hero-content {
   max-width: 800px;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-copy {
+  position: absolute;
+  left: 50%;
+  top: 58vh;
+  transform: translate(-50%, -50%);
+  width: min(760px, calc(100% - 2rem));
+  z-index: 1;
+  padding: 1.25rem 1.5rem 1.5rem;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
+  color: var(--text-main);
 }
 
 .hero-title {
-  font-size: 4rem;
+  font-size: 2.4rem;
   line-height: 1.1;
-  margin-bottom: 2rem;
-  color: white;
+  margin-bottom: 0.9rem;
+  color: var(--secondary);
 }
 
 .hero-subtitle {
-  font-size: 1.25rem;
-  margin-bottom: 3rem;
-  opacity: 0.9;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  opacity: 0.92;
+  color: var(--text-light);
 }
 
 .hero-btns {
   display: flex;
-  gap: 1.5rem;
+  gap: 0.9rem;
+  justify-content: center;
+}
+
+.hero-dots {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 1rem;
+  z-index: 2;
+}
+
+.hero-dots .dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.3);
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.hero-dots .dot.active {
+  background: var(--primary);
+  transform: scale(1.3);
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* Intro Section */
@@ -271,6 +376,9 @@ const services = [
   overflow: hidden;
   box-shadow: 0 5px 20px rgba(0,0,0,0.05);
   transition: var(--transition);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .product-card:hover {
@@ -296,6 +404,9 @@ const services = [
 
 .product-info {
   padding: 2rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .product-info h3 {
@@ -307,12 +418,21 @@ const services = [
   margin-bottom: 1.5rem;
 }
 
+.truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .link-more {
   color: var(--primary);
   font-weight: 700;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  margin-top: auto;
 }
 
 /* CTA Section */
@@ -342,6 +462,21 @@ const services = [
   font-size: 1.1rem;
 }
 
+.flex-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 @media (max-width: 992px) {
   .hero-title {
     font-size: 2.5rem;
@@ -358,6 +493,127 @@ const services = [
   }
   .cta-content h2 {
     font-size: 1.8rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero {
+    height: auto;
+    min-height: auto;
+    padding-top: 0;
+  }
+
+  .hero-bg img {
+    object-position: center top;
+  }
+
+  .hero-bg {
+    height: 58vh;
+  }
+
+  .hero-copy {
+    top: 55vh;
+    width: calc(100% - 1.25rem);
+    padding: 1rem 1rem 1.1rem;
+    border-radius: 16px;
+  }
+
+  .hero-content {
+    padding-top: 0;
+  }
+
+  .hero-title {
+    font-size: 1.6rem;
+    margin-bottom: 1rem;
+  }
+
+  .hero-subtitle {
+    font-size: 0.92rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .hero-btns {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .hero-btns .btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .hero-dots {
+    top: calc(58vh - 2.5rem);
+    bottom: auto;
+  }
+
+  .intro {
+    padding-top: 72px;
+  }
+
+  .intro-image img {
+    border-radius: 14px;
+  }
+
+  .intro-text h2 {
+    font-size: 1.8rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .service-card {
+    padding: 1.5rem;
+    text-align: center;
+  }
+
+  .product-card {
+    max-width: 100%;
+  }
+
+  .cta-box {
+    padding: 20px;
+  }
+
+  .cta-content h2 {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-bg {
+    height: 52vh;
+  }
+
+  .hero-copy {
+    top: 50vh;
+    width: calc(100% - 0.9rem);
+    padding: 0.9rem 0.9rem 1rem;
+    border-radius: 14px;
+  }
+
+  .hero-title {
+    font-size: 1.45rem;
+  }
+
+  .hero-subtitle {
+    font-size: 0.86rem;
+  }
+
+  .hero-dots {
+    top: calc(52vh - 2rem);
+  }
+
+  .intro-text h2,
+  .cta-content h2 {
+    font-size: 1.4rem;
+  }
+
+  .section-padding {
+    padding-top: 56px;
+    padding-bottom: 56px;
   }
 }
 </style>

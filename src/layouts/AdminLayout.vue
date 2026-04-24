@@ -1,291 +1,242 @@
 <script setup>
-import { LayoutDashboard, ShoppingCart, FileText, MessageSquare, PhoneCall, LogOut, ChevronRight, Menu, X } from 'lucide-vue-next'
-import { ref } from 'vue'
+import { LayoutDashboard, ShoppingCart, FileText, MessageSquare, PhoneCall, LogOut, ChevronLeft, Menu, X, LayoutGrid, Bell, Users } from 'lucide-vue-next'
+import { ref, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
+const route = useRoute()
+const router = useRouter()
 const isCollapsed = ref(false)
 const isMobileOpen = ref(false)
 
-const menuItems = [
-  { name: 'Tổng quan', path: '/admin', icon: LayoutDashboard },
-  { name: 'Sản phẩm', path: '/admin/products', icon: ShoppingCart },
-  { name: 'Tài liệu', path: '/admin/documents', icon: FileText },
-  { name: 'Bài viết', path: '/admin/blogs', icon: MessageSquare },
-  { name: 'Liên hệ', path: '/admin/contacts', icon: PhoneCall },
-]
+const user = ref(JSON.parse(localStorage.getItem('user') || '{"fullName": "Admin", "roles": []}'))
 
-const toggleSidebar = () => {
-    isCollapsed.value = !isCollapsed.value
+// Kiểm tra quyền Admin — roles có thể là string[] hoặc object[]
+const isAdmin = computed(() => {
+  return user.value.roles?.some(r => {
+    if (typeof r === 'string') {
+      return r === 'ROLE_ADMIN' || r === 'ADMIN'
+    }
+    return r.code === 'ADMIN' || r.code === 'AD' || r.name === 'ROLE_ADMIN'
+  })
+})
+
+const menuItems = computed(() => {
+  const items = [
+    { name: 'Tổng quan', path: '/admin', icon: LayoutDashboard },
+    { name: 'Danh mục', path: '/admin/categories', icon: LayoutGrid },
+    { name: 'Sản phẩm', path: '/admin/products', icon: ShoppingCart },
+    { name: 'Tài liệu', path: '/admin/documents', icon: FileText },
+    { name: 'Bài viết', path: '/admin/blogs', icon: MessageSquare },
+    { name: 'Liên hệ', path: '/admin/contacts', icon: PhoneCall },
+    { name: 'Banners', path: '/admin/banners', icon: LayoutDashboard },
+    { name: 'Thông tin Web', path: '/admin/web-info', icon: FileText },
+  ]
+
+  // Chỉ Admin mới thấy mục quản lý người dùng
+  if (isAdmin.value) {
+    items.push({ name: 'Người dùng', path: '/admin/users', icon: Users })
+  }
+
+  return items
+})
+
+const handleLogout = () => {
+  localStorage.removeItem('access_token')
+  localStorage.removeItem('refresh_token')
+  localStorage.removeItem('user')
+  router.push('/admin/login')
 }
 </script>
 
 <template>
-  <div class="admin-layout">
-    <!-- Mobile Sidebar Trigger -->
-    <button class="mobile-menu-trigger" @click="isMobileOpen = true">
-        <Menu :size="24" />
+  <div :class="['admin-shell', isCollapsed ? 'sidebar-collapsed' : '']">
+    <!-- Mobile trigger -->
+    <button class="m-trigger" @click="isMobileOpen = true">
+      <Menu :size="22" />
     </button>
 
     <!-- Sidebar -->
-    <aside :class="['sidebar', isCollapsed ? 'collapsed' : '', isMobileOpen ? 'mobile-open' : '']">
-      <div class="sidebar-header">
-        <div class="logo-admin">
-          <span class="logo-text">BaoThangMay</span>
-          <span class="badge">ADMIN</span>
+    <aside :class="['admin-sidebar', isMobileOpen ? 'open' : '']">
+      <div class="sb-top">
+        <div class="sb-brand" v-show="!isCollapsed">
+          <span class="brand-name">Elevator</span>
+          <span class="brand-tag">ADMIN</span>
         </div>
-        <button class="toggle-btn" @click="toggleSidebar">
-           <ChevronRight :size="18" :class="isCollapsed ? 'rotate-0' : 'rotate-180'" />
+        <button class="sb-toggle" @click="isCollapsed = !isCollapsed" title="Thu gọn">
+          <ChevronLeft :size="18" :style="{ transform: isCollapsed ? 'rotate(180deg)' : 'rotate(0)' }" />
         </button>
-        <button class="mobile-close" @click="isMobileOpen = false">
-            <X :size="24" />
-        </button>
+        <button class="sb-close" @click="isMobileOpen = false"><X :size="22" /></button>
       </div>
 
-      <nav class="sidebar-nav">
-        <ul>
-          <li v-for="item in menuItems" :key="item.path">
-            <router-link :to="item.path" active-class="active" @click="isMobileOpen = false">
-              <component :is="item.icon" :size="20" class="nav-icon" />
-              <span v-if="!isCollapsed">{{ item.name }}</span>
-            </router-link>
-          </li>
-        </ul>
+      <nav class="sb-nav">
+        <router-link
+          v-for="item in menuItems" :key="item.path"
+          :to="item.path" :class="['sb-link', route.path === item.path ? 'active' : '']"
+          @click="isMobileOpen = false"
+        >
+          <component :is="item.icon" :size="20" class="sb-icon" />
+          <span class="sb-label" v-show="!isCollapsed">{{ item.name }}</span>
+        </router-link>
       </nav>
 
-      <div class="sidebar-footer">
-        <router-link to="/" class="logout-link">
-          <LogOut :size="20" class="nav-icon" />
-          <span v-if="!isCollapsed">Xem Website</span>
+      <div class="sb-bottom">
+        <router-link to="/" class="sb-link" @click="isMobileOpen = false">
+          <LogOut :size="20" class="sb-icon" />
+          <span class="sb-label" v-show="!isCollapsed">Xem Website</span>
         </router-link>
+        <button class="sb-link w-100 text-left bg-transparent border-0 cursor-pointer" @click="handleLogout">
+          <LogOut :size="20" class="sb-icon text-danger" />
+          <span class="sb-label text-danger" v-show="!isCollapsed">Đăng xuất</span>
+        </button>
       </div>
     </aside>
 
-    <!-- Main Admin Content -->
-    <main class="admin-main">
-      <header class="admin-topbar">
-        <div class="topbar-search">
-            <input type="text" placeholder="Tìm kiếm nhanh..." />
+    <!-- Mobile overlay -->
+    <div v-if="isMobileOpen" class="m-overlay" @click="isMobileOpen = false"></div>
+
+    <!-- Main -->
+    <div class="admin-body">
+      <header class="admin-bar">
+        <div class="bar-left">
+          <h1 class="bar-title">{{ menuItems.find(m => m.path === route.path)?.name || 'Admin' }}</h1>
         </div>
-        <div class="topbar-user">
-            <span class="user-role">Administrator</span>
-            <div class="avatar">AD</div>
+        <div class="bar-right">
+          <button class="bar-icon-btn"><Bell :size="18" /></button>
+          <div class="bar-user">
+            <span class="user-name">{{ user.fullName }}</span>
+            <div class="user-avatar">{{ user.fullName.substring(0, 2).toUpperCase() }}</div>
+          </div>
         </div>
       </header>
 
-      <div class="admin-page-content">
+      <main class="admin-content">
         <router-view v-slot="{ Component }">
-          <transition name="fade" mode="out-in">
+          <transition name="page" mode="out-in">
             <component :is="Component" />
           </transition>
         </router-view>
-      </div>
-    </main>
-
-    <!-- Overlay for mobile sidebar -->
-    <div v-if="isMobileOpen" class="sidebar-overlay" @click="isMobileOpen = false"></div>
+      </main>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.admin-layout {
-  display: flex;
-  min-height: 100vh;
-  background: #f4f7fa;
+/* ═══ Layout Shell ═══ */
+.admin-shell {
+  display: flex; min-height: 100vh; background: #f1f5f9;
 }
 
-.sidebar {
-  width: 280px;
-  background: #1a237e; /* Deep indigo for admin */
-  color: white;
-  display: flex;
-  flex-direction: column;
-  transition: width 0.3s ease;
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  z-index: 1000;
+/* ═══ Sidebar ═══ */
+.admin-sidebar {
+  width: 260px; background: linear-gradient(180deg, #1e1b4b 0%, #312e81 100%);
+  color: #fff; display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh; z-index: 1100;
+  transition: width 0.25s cubic-bezier(0.4,0,0.2,1);
+  flex-shrink: 0;
+}
+.sidebar-collapsed .admin-sidebar { width: 72px; }
+
+.sb-top {
+  padding: 1.25rem; display: flex; align-items: center;
+  justify-content: space-between; min-height: 68px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.sb-brand { display: flex; align-items: center; gap: 0.5rem; }
+.brand-name { font-weight: 800; font-size: 1.25rem; letter-spacing: 0.5px; }
+.brand-tag {
+  background: #6366f1; font-size: 0.6rem; padding: 0.15rem 0.45rem;
+  border-radius: 4px; font-weight: 700; letter-spacing: 1px;
+}
+.sb-toggle {
+  background: rgba(255,255,255,0.08); border: none; color: #c7d2fe;
+  width: 30px; height: 30px; border-radius: 6px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: 0.2s;
+}
+.sb-toggle:hover { background: rgba(255,255,255,0.15); }
+.sb-close { display: none; }
+
+/* ═══ Nav Links ═══ */
+.sb-nav { flex: 1; padding: 1rem 0; display: flex; flex-direction: column; gap: 2px; overflow-y: auto; }
+.sb-link {
+  display: flex; align-items: center; gap: 0.85rem;
+  padding: 0.7rem 1.25rem; color: rgba(255,255,255,0.6);
+  transition: 0.15s; border-left: 3px solid transparent; text-decoration: none;
+  font-size: 0.9rem; font-weight: 500;
+}
+.sb-link:hover { color: #fff; background: rgba(255,255,255,0.06); }
+.sb-link.active {
+  color: #fff; background: rgba(255,255,255,0.1);
+  border-left-color: #818cf8;
+}
+.sidebar-collapsed .sb-link { justify-content: center; padding: 0.7rem; }
+.sb-icon { flex-shrink: 0; }
+.sb-label { white-space: nowrap; }
+
+.sb-bottom {
+  border-top: 1px solid rgba(255,255,255,0.08); padding: 0.75rem 0;
 }
 
-.sidebar.collapsed {
-  width: 80px;
+/* ═══ Main Body ═══ */
+.admin-body { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+.admin-bar {
+  height: 64px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 1.75rem; position: sticky; top: 0; z-index: 100;
+}
+.bar-title { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 0; }
+.bar-right { display: flex; align-items: center; gap: 1rem; }
+.bar-icon-btn {
+  background: #f1f5f9; border: none; width: 36px; height: 36px;
+  border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; color: #64748b; transition: 0.15s;
+}
+.bar-icon-btn:hover { background: #e2e8f0; }
+.bar-user { display: flex; align-items: center; gap: 0.6rem; }
+.user-name { font-size: 0.85rem; color: #64748b; font-weight: 600; }
+.user-avatar {
+  width: 36px; height: 36px; background: linear-gradient(135deg, #6366f1, #818cf8);
+  color: #fff; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-weight: 700; font-size: 0.78rem;
 }
 
-.sidebar-header {
-  padding: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  min-height: 80px;
+.admin-content {
+  padding: 1.75rem; flex: 1;
+  max-width: 1440px; width: 100%; margin: 0 auto; box-sizing: border-box;
 }
 
-.logo-admin .logo-text {
-  font-weight: 800;
-  font-size: 1.4rem;
-  letter-spacing: 1px;
-}
+/* ═══ Mobile ═══ */
+.m-trigger { display: none; }
+.m-overlay { display: none; }
 
-.logo-admin .badge {
-  background: var(--primary);
-  font-size: 0.65rem;
-  padding: 0.2rem 0.5rem;
-  border-radius: 4px;
-  margin-left: 0.5rem;
-  vertical-align: middle;
-}
-
-.sidebar.collapsed .logo-admin {
-    display: none;
-}
-
-.toggle-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: white;
-  width: 30px;
-  height: 30px;
-  border-radius: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.rotate-180 { transform: rotate(180deg); transition: 0.3s; }
-.rotate-0 { transform: rotate(0deg); transition: 0.3s; }
-
-.sidebar-nav {
-  flex: 1;
-  padding: 1.5rem 0;
-}
-
-.sidebar-nav ul li {
-  margin-bottom: 0.5rem;
-}
-
-.sidebar-nav a, .logout-link {
-  display: flex;
-  align-items: center;
-  padding: 1rem 1.5rem;
-  color: rgba(255, 255, 255, 0.7);
-  gap: 1rem;
-  transition: 0.2s;
-}
-
-.sidebar-nav a:hover, .sidebar-nav a.active {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border-left: 4px solid var(--primary);
-}
-
-.sidebar.collapsed a {
-    justify-content: center;
-}
-
-.sidebar-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 1.5rem 0;
-}
-
-.admin-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.admin-topbar {
-  height: 80px;
-  background: white;
-  box-shadow: 0 1px 10px rgba(0, 0, 0, 0.05);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 2rem;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.topbar-search input {
-    background: #f0f2f5;
-    border: none;
-    padding: 0.7rem 1.5rem;
-    border-radius: 20px;
-    width: 300px;
-}
-
-.topbar-user {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.user-role {
-    font-size: 0.9rem;
-    color: #666;
-    font-weight: 600;
-}
-
-.avatar {
-    width: 40px;
-    height: 40px;
-    background: var(--primary);
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-}
-
-.admin-page-content {
-  padding: 2.5rem;
-  max-width: 1400px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-.mobile-menu-trigger, .mobile-close {
-    display: none;
-}
-
-@media (max-width: 992px) {
-  .sidebar {
-    position: fixed;
-    left: -280px;
-    width: 280px;
+@media (max-width: 1024px) {
+  .admin-sidebar {
+    position: fixed; left: -280px; width: 260px !important;
+    transition: left 0.3s ease;
   }
-  .sidebar.mobile-open {
-    left: 0;
+  .admin-sidebar.open { left: 0; }
+  .sidebar-collapsed .admin-sidebar { width: 260px !important; }
+  .m-trigger {
+    display: flex; align-items: center; justify-content: center;
+    position: fixed; top: 16px; left: 16px; z-index: 200;
+    background: #fff; border: none; width: 40px; height: 40px;
+    border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    cursor: pointer; color: #334155;
   }
-  .sidebar.collapsed { width: 280px; }
-  .mobile-menu-trigger {
-    display: block;
-    position: fixed;
-    top: 25px;
-    left: 20px;
-    z-index: 200;
-    background: white;
-    border: none;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    width: 40px;
-    height: 40px;
-    border-radius: 8px;
+  .sb-close {
+    display: flex; background: none; border: none; color: #c7d2fe;
+    cursor: pointer; align-items: center; justify-content: center;
   }
-  .mobile-close {
-      display: block;
-      background: none;
-      border: none;
-      color: white;
+  .sb-toggle { display: none; }
+  .m-overlay {
+    display: block; position: fixed; inset: 0;
+    background: rgba(15,23,42,0.5); z-index: 1050;
   }
-  .sidebar-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.5);
-    z-index: 999;
-  }
-  .topbar-search { display: none; }
+  .admin-bar { padding-left: 4rem; }
+  .admin-content { padding: 1rem; }
 }
+
+/* ═══ Page Transition ═══ */
+.page-enter-active, .page-leave-active { transition: opacity 0.15s ease; }
+.page-enter-from, .page-leave-to { opacity: 0; }
 </style>
