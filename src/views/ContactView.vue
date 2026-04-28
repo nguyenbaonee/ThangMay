@@ -188,12 +188,16 @@ const submitForm = async () => {
 
 <style scoped>
 .subpage-hero {
-  height: 400px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+.contact > .subpage-hero + .section-padding {
+  padding-top: 196px;
 }
 
 .subpage-hero .hero-bg {
@@ -227,6 +231,10 @@ const submitForm = async () => {
 .contact-info-side h2 {
     font-size: 2.5rem;
     margin-bottom: 2rem;
+}
+
+.contact-info-side > p {
+    max-width: 620px;
 }
 
 .info-cards {
@@ -290,6 +298,11 @@ const submitForm = async () => {
     transform: translateY(-3px);
 }
 
+.social-connect h3 {
+    color: var(--secondary);
+    margin-bottom: 0.75rem;
+}
+
 .contact-form-side {
     padding: 3rem;
     border-radius: 20px;
@@ -301,6 +314,11 @@ const submitForm = async () => {
     font-size: 1.8rem;
     margin-bottom: 1rem;
     color: var(--secondary);
+}
+
+.contact-form-side > p {
+    color: var(--text-light);
+    line-height: 1.7;
 }
 
 .form-group {
@@ -369,30 +387,80 @@ button[type="submit"] {
 }
 
 @media (max-width: 768px) {
-  .subpage-hero {
-    height: 260px;
+  .contact > .subpage-hero + .section-padding {
+    padding-top: 128px;
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 
-  .subpage-hero h1 {
-    font-size: 2rem;
+  .contact-grid {
+    gap: 1.5rem;
   }
 
-  .subpage-hero p {
-    font-size: 0.92rem;
+  .contact-info-side {
+    text-align: center;
+  }
+
+  .label {
+    display: inline-block;
+    margin-bottom: 0.9rem;
+    letter-spacing: 0.08em;
   }
 
   .contact-info-side h2 {
-    font-size: 1.9rem;
+    font-size: 2.35rem;
+    line-height: 1.14;
+    margin-bottom: 1rem;
+  }
+
+  .contact-info-side > p {
+    margin: 0 auto 1.5rem;
+    font-size: 1rem;
+    line-height: 1.8;
+  }
+
+  .info-cards {
+    gap: 0.9rem;
   }
 
   .info-card {
-    padding: 1.25rem;
+    padding: 1.1rem 1rem;
     gap: 1rem;
+    border-radius: 18px;
+    align-items: flex-start;
+    text-align: left;
+    box-shadow: 0 14px 34px rgba(8, 15, 30, 0.06);
+  }
+
+  .info-card .icon {
+    margin-top: 0.15rem;
+  }
+
+  .info-card h3 {
+    font-size: 1.05rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .info-card p {
+    font-size: 0.95rem;
+    line-height: 1.65;
   }
 
   .contact-form-side {
-    padding: 1.5rem;
-    border-radius: 16px;
+    padding: 1.4rem;
+    border-radius: 24px;
+    box-shadow: 0 18px 42px rgba(8, 15, 30, 0.08);
+  }
+
+  .contact-form-side h3 {
+    font-size: 1.75rem;
+    line-height: 1.2;
+    margin-bottom: 0.75rem;
+  }
+
+  .contact-form-side > p {
+    font-size: 0.98rem;
+    margin-bottom: 1.1rem;
   }
 
   .form-group {
@@ -400,15 +468,24 @@ button[type="submit"] {
   }
 
   input, select, textarea {
-    padding: 0.9rem;
+    padding: 0.95rem 1rem;
+    border-radius: 14px;
+    font-size: 0.98rem;
   }
 
   button[type="submit"] {
     width: 100%;
+    min-height: 54px;
+    border-radius: 14px;
+  }
+
+  .social-connect {
+    margin-top: 1.5rem !important;
   }
 
   .social-btns {
-    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.8rem;
   }
 
   .social-btn {
@@ -416,8 +493,19 @@ button[type="submit"] {
     height: 42px;
   }
 
+  .map-section {
+    padding-top: 0;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .map-section .container {
+    border-radius: 20px;
+    box-shadow: 0 16px 34px rgba(8, 15, 30, 0.08);
+  }
+
   iframe {
-    height: 320px;
+    height: 280px;
   }
 }
 </style>

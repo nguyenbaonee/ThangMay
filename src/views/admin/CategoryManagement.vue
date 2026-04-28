@@ -17,7 +17,7 @@ const targetDeleteId = ref(null)
 const saving = ref(false)
 const isUploadingIcon = ref(false)
 
-const initialForm = { id: null, name: '', slug: '', description: '', icon: '', sortOrder: 0, isActive: true }
+const initialForm = { id: null, name: '', slug: '', description: '', icon: '', isActive: true }
 const form = ref({ ...initialForm })
 
 const fetchData = async () => {
@@ -57,15 +57,24 @@ const onIconSelected = async (e) => {
   }
 }
 
+const buildCategoryPayload = () => ({
+  name: form.value.name,
+  slug: form.value.slug,
+  description: form.value.description,
+  icon: form.value.icon,
+  isActive: form.value.isActive
+})
+
 const saveCategory = async () => {
   if (!form.value.name) { toast.error('Vui lòng nhập Tên danh mục!'); return }
   saving.value = true
   try {
+    const payload = buildCategoryPayload()
     if (modalMode.value === 'create') {
-      await categoryApi.create(form.value)
+      await categoryApi.create(payload)
       toast.success('Thêm danh mục thành công!')
     } else {
-      await categoryApi.update(form.value.id, form.value)
+      await categoryApi.update(form.value.id, payload)
       toast.success('Cập nhật thành công!')
     }
     closeModal(); fetchData()
@@ -192,10 +201,6 @@ const confirmDelete = async () => {
             <p class="form-hint">Tự động tạo từ tên danh mục để tối ưu SEO.</p>
           </div>
 
-          <div class="form-group">
-            <label>Thứ tự</label>
-            <input type="number" v-model="form.sortOrder" class="form-control" />
-          </div>
 
           <div class="form-group">
             <label>Trạng thái</label>

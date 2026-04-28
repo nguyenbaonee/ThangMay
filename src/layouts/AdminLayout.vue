@@ -32,9 +32,9 @@ const menuItems = computed(() => {
     { name: 'Thông tin Web', path: '/admin/web-info', icon: FileText },
   ]
 
-  // Chỉ Admin mới thấy mục quản lý người dùng
+  // Chỉ Admin mới thấy mục quản lý nhân viên
   if (isAdmin.value) {
-    items.push({ name: 'Người dùng', path: '/admin/users', icon: Users })
+    items.push({ name: 'Nhân viên', path: '/admin/users', icon: Users })
   }
 
   return items

@@ -10,48 +10,106 @@ const isLoading = ref(true)
 const showAddModal = ref(false)
 const submittings = ref(false)
 
-const newUser = ref({
+const initialUserForm = {
   username: '',
   password: '',
   confirmPassword: '',
   email: '',
   fullname: '',
-  role: 'EDITOR' // Mặc định tạo Editor
+  role: 'EDITOR'
+}
+
+const userForm = ref({ ...initialUserForm })
+const isEdit = ref(false)
+const editingId = ref(null)
+
+const showFilters = ref(false)
+const filters = ref({
+    role: '',
+    sort: 'desc'
 })
 
 const fetchUsers = async () => {
     isLoading.value = true
     try {
-        const res = await userApi.getAll()
+        const res = await userApi.getAll({
+            role: filters.value.role || undefined,
+            sort: filters.value.sort
+        })
         users.value = res.data || []
     } catch (error) {
-        toast.error('Không thể tải danh sách người dùng!')
+        toast.error('Không thể tải danh sách tài khoản!')
     } finally {
         isLoading.value = false
     }
 }
 
-const handleAddUser = async () => {
-    if (newUser.value.password !== newUser.value.confirmPassword) {
-        toast.error('Mật khẩu xác nhận không khớp!')
-        return
-    }
+const openAddModal = () => {
+    isEdit.value = false
+    editingId.value = null
+    userForm.value = { ...initialUserForm }
+    showAddModal.value = true
+}
 
-    if (newUser.value.password.length < 8 || !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/.test(newUser.value.password)) {
-        toast.error('Mật khẩu cần ít nhất 8 ký tự, gồm chữ hoa, chữ thường và số!')
-        return
+const openEditModal = (user) => {
+    isEdit.value = true
+    editingId.value = user.id
+    // Map backend roles to local role if necessary
+    const roleCode = (user.roles || []).some(r => typeof r === 'string' ? r.includes('ADMIN') : r.code === 'ADMIN') ? 'ADMIN' : 'EDITOR'
+    
+    userForm.value = {
+        username: user.username,
+        fullname: user.fullName,
+        email: user.email,
+        role: roleCode,
+        password: '', // Không sửa mật khẩu ở đây mặc định
+        confirmPassword: ''
+    }
+    showAddModal.value = true
+}
+
+const closeAddModal = () => {
+    showAddModal.value = false
+    if (!submittings.value) {
+        userForm.value = { ...initialUserForm }
+        isEdit.value = false
+        editingId.value = null
+    }
+}
+
+const handleSubmit = async () => {
+    if (!isEdit.value) {
+        // Validation cho Thêm mới
+        if (userForm.value.password !== userForm.value.confirmPassword) {
+            toast.error('Mật khẩu xác nhận không khớp!')
+            return
+        }
+
+        if (userForm.value.password.length < 8 || !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/.test(userForm.value.password)) {
+            toast.error('Mật khẩu cần ít nhất 8 ký tự, gồm chữ hoa, chữ thường và số!')
+            return
+        }
+    } else {
+        // Validation cho Cập nhật (nếu có đổi pass)
+        if (userForm.value.password && userForm.value.password !== userForm.value.confirmPassword) {
+            toast.error('Mật khẩu xác nhận không khớp!')
+            return
+        }
     }
 
     submittings.value = true
     try {
-        await authApi.register(newUser.value)
-        toast.success('Đã thêm người dùng mới thành công!')
-        showAddModal.value = false
+        if (isEdit.value) {
+            await userApi.update(editingId.value, userForm.value)
+            toast.success('Đã cập nhật tài khoản thành công!')
+        } else {
+            await authApi.register(userForm.value)
+            toast.success('Đã thêm tài khoản thành công!')
+        }
+        closeAddModal()
         fetchUsers()
-        // Reset form
-        newUser.value = { username: '', password: '', confirmPassword: '', email: '', fullname: '', role: 'EDITOR' }
     } catch (error) {
-        toast.error(error.response?.data?.message || 'Có lỗi xảy ra khi thêm người dùng!')
+        toast.error(error.response?.data?.message || 'Có lỗi xảy ra!')
     } finally {
         submittings.value = false
     }
@@ -60,10 +118,10 @@ const handleAddUser = async () => {
 const handleDeleteUser = async (userId) => {
     try {
         await userApi.delete(userId)
-        toast.success('Đã xóa người dùng!')
+        toast.success('Đã xóa tài khoản!')
         fetchUsers()
     } catch (error) {
-        toast.error('Không thể xóa người dùng!')
+        toast.error('Không thể xóa tài khoản!')
     }
 }
 
@@ -84,18 +142,18 @@ onMounted(fetchUsers)
   <div class="admin-page user-mgmt">
     <div class="page-header">
       <div>
-        <h2>Quản lý Người dùng</h2>
-        <p class="subtitle">Danh sách Admin & Biên tập viên hệ thống</p>
+        <h2>Quản lý Nhân viên</h2>
+        <p class="subtitle">Danh sách Admin & Nhân viên hệ thống</p>
       </div>
-      <button class="btn btn-gold" @click="showAddModal = !showAddModal">
-        <Plus :size="18" /> Thêm Editor mới
+      <button class="btn btn-gold" @click="openAddModal">
+        <Plus :size="18" /> Thêm Tài khoàn nhân viên
       </button>
     </div>
 
     <!-- Premium Stats Card -->
     <div class="stats-card-premium mb-6">
         <div class="stats-content">
-            <p class="stats-label">Tổng số người dùng</p>
+            <p class="stats-label">Tổng số tài khoản</p>
             <h1 class="stats-value">{{ users.length.toLocaleString() }}</h1>
             <div class="stats-badge">
                 <span>+12% tháng này</span>
@@ -105,16 +163,37 @@ onMounted(fetchUsers)
     </div>
 
     <!-- Main Action Button -->
-    <button class="btn-add-premium mb-6" @click="showAddModal = !showAddModal">
-        <UserPlus :size="20" /> Thêm người dùng mới
+    <button class="btn-add-premium mb-6" @click="openAddModal">
+        <UserPlus :size="20" /> Thêm tài khoản nhân viên mới
     </button>
 
     <!-- Header Section -->
     <div class="section-header mb-4">
-        <h3>Danh sách thành viên</h3>
-        <button class="btn-filter">
+        <h3>Danh sách tài khoản</h3>
+        <button :class="['btn-filter', { active: showFilters }]" @click="showFilters = !showFilters">
             <Filter :size="18" /> Lọc
         </button>
+    </div>
+
+    <!-- Filters Bar -->
+    <div v-if="showFilters" class="filters-wrapper animate-in mb-6">
+        <div class="filters-container">
+            <div class="filter-group">
+                <label>Quyền hạn</label>
+                <select v-model="filters.role" @change="fetchUsers" class="filter-control">
+                    <option value="">Tất cả quyền hạn</option>
+                    <option value="ADMIN">Quản trị viên</option>
+                    <option value="EDITOR">Biên tập viên</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Sắp xếp thời gian</label>
+                <select v-model="filters.sort" @change="fetchUsers" class="filter-control">
+                    <option value="desc">Mới nhất trước</option>
+                    <option value="asc">Cũ nhất trước</option>
+                </select>
+            </div>
+        </div>
     </div>
 
     <!-- Users List (Cards) -->
@@ -147,7 +226,7 @@ onMounted(fetchUsers)
                 </div>
                 
                 <div class="user-card-actions">
-                    <button class="action-icon-btn" title="Đổi trạng thái" @click="toggleUserStatus(u)">
+                    <button class="action-icon-btn" title="Chỉnh sửa" @click="openEditModal(u)">
                         <Pencil :size="18" />
                     </button>
                     <button class="action-icon-btn delete" title="Xóa" @click="handleDeleteUser(u.id)">
@@ -159,36 +238,38 @@ onMounted(fetchUsers)
     </div>
 
     <!-- Inline Add Form -->
-    <div v-if="showAddModal" class="inline-form-card animate-in mb-4">
+    <div v-if="showAddModal" class="modal-overlay" @click.self="closeAddModal">
+      <div class="modal-box user-modal animate-in">
         <div class="form-header">
-            <h3>Thêm người dùng mới</h3>
-            <button class="close-btn" @click="showAddModal = false"><X :size="20" /></button>
+            <h3>{{ isEdit ? 'Chỉnh sửa tài khoản' : 'Thêm tài khoản mới' }}</h3>
+            <button class="close-btn" @click="closeAddModal"><X :size="20" /></button>
         </div>
-        <form @submit.prevent="handleAddUser" class="form-content">
+        <form @submit.prevent="handleSubmit" class="form-content">
             <div class="form-group mb-4">
                 <label>Họ và tên <span class="text-danger">*</span></label>
-                <input v-model="newUser.fullname" class="form-control" placeholder="Nguyễn Văn A" required />
+                <input v-model="userForm.fullname" class="form-control" placeholder="Nguyễn Văn A" required />
             </div>
 
             <div class="form-row mb-4">
                 <div class="form-group">
                     <label>Tên đăng nhập <span class="text-danger">*</span></label>
-                    <input v-model="newUser.username" class="form-control" placeholder="editor_01" required />
+                    <input v-model="userForm.username" class="form-control" placeholder="editor_01" required :disabled="isEdit" />
                 </div>
                 <div class="form-group">
                     <label>Email <span class="text-danger">*</span></label>
-                    <input v-model="newUser.email" type="email" class="form-control" placeholder="email@example.com" required />
+                    <input v-model="userForm.email" type="email" class="form-control" placeholder="email@example.com" required />
                 </div>
             </div>
 
             <div class="form-row mb-4">
                 <div class="form-group">
-                    <label>Mật khẩu <span class="text-danger">*</span></label>
-                    <input v-model="newUser.password" type="password" class="form-control" placeholder="••••••••" required />
+                    <label>Mật khẩu <span v-if="!isEdit" class="text-danger">*</span></label>
+                    <input v-model="userForm.password" type="password" class="form-control" placeholder="••••••••" :required="!isEdit" />
+                    <p v-if="isEdit" class="text-xs text-muted mt-1">Để trống nếu không muốn đổi mật khẩu</p>
                 </div>
                 <div class="form-group">
-                    <label>Xác nhận mật khẩu <span class="text-danger">*</span></label>
-                    <input v-model="newUser.confirmPassword" type="password" class="form-control" placeholder="••••••••" required />
+                    <label>Xác nhận mật khẩu <span v-if="!isEdit" class="text-danger">*</span></label>
+                    <input v-model="userForm.confirmPassword" type="password" class="form-control" placeholder="••••••••" :required="!isEdit" />
                 </div>
             </div>
 
@@ -196,23 +277,24 @@ onMounted(fetchUsers)
                 <label>Quyền hạn</label>
                 <div class="radio-group">
                     <label class="radio-item">
-                        <input type="radio" value="EDITOR" v-model="newUser.role" />
+                        <input type="radio" value="EDITOR" v-model="userForm.role" />
                         <span class="radio-mark"></span> Biên tập viên
                     </label>
-                    <label class="radio-item">
-                        <input type="radio" value="ADMIN" v-model="newUser.role" />
+                    <label class="radio-item disabled-option" title="Tính năng có thể nâng cấp">
+                        <input type="radio" value="ADMIN" v-model="userForm.role" disabled />
                         <span class="radio-mark"></span> Quản trị viên
                     </label>
                 </div>
             </div>
 
             <div class="form-actions">
-                <button type="button" class="btn btn-outline" @click="showAddModal = false">Hủy bỏ</button>
+                <button type="button" class="btn btn-outline" @click="closeAddModal">Hủy bỏ</button>
                 <button type="submit" class="btn btn-gold" :disabled="submittings">
-                    <Loader2 v-if="submittings" class="spinner" :size="16" /> Lưu người dùng
+                    <Loader2 v-if="submittings" class="loading-spinner" :size="16" /> {{ isEdit ? 'Cập nhật' : 'Lưu tài khoản' }}
                 </button>
             </div>
         </form>
+      </div>
     </div>
   </div>
 </template>
@@ -291,12 +373,138 @@ onMounted(fetchUsers)
 .btn-filter {
     background: transparent;
     border: none;
-    color: #1d4ed8;
+    color: #475569;
     font-weight: 600;
     display: flex;
     align-items: center;
     gap: 0.4rem;
     cursor: pointer;
+    transition: 0.2s;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+}
+.btn-filter:hover {
+    background: #f1f5f9;
+    color: #1d4ed8;
+}
+.btn-filter.active {
+    background: #eff6ff;
+    color: #1d4ed8;
+}
+
+/* Filters Bar */
+.filters-wrapper {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.filters-container {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-width: 200px;
+    flex: 1;
+}
+
+.filter-group label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.filter-control {
+    padding: 0.5rem 0.75rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    color: #334155;
+    outline: none;
+    transition: 0.2s;
+    background-color: #f8fafc;
+}
+
+.filter-control:focus {
+    border-color: #1d4ed8;
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    z-index: 1000;
+}
+
+.modal-box.user-modal {
+    width: min(760px, 100%);
+    max-height: calc(100vh - 3rem);
+    overflow-y: auto;
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+    padding: 1.5rem;
+}
+
+.form-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+}
+
+.form-header h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.close-btn {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 999px;
+    background: #f8fafc;
+    color: #475569;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.close-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+.form-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
 }
 
 /* User Card */
@@ -425,6 +633,35 @@ onMounted(fetchUsers)
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 /* Radio Group Styling with Blue (matches new stats card) */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.radio-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  position: relative;
+  font-size: 0.95rem;
+  color: #475569;
+}
+
+.radio-item input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.radio-item.disabled-option {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .radio-mark {
   width: 18px;
   height: 18px;
@@ -432,6 +669,7 @@ onMounted(fetchUsers)
   border-radius: 50%;
   position: relative;
   transition: 0.2s;
+  flex-shrink: 0;
 }
 
 .radio-item input:checked + .radio-mark {
@@ -451,4 +689,29 @@ onMounted(fetchUsers)
 }
 
 .mb-4 { margin-bottom: 1rem; }
+
+@media (max-width: 768px) {
+    .modal-overlay {
+        padding: 1rem;
+        align-items: flex-start;
+    }
+
+    .modal-box.user-modal {
+        margin-top: 1rem;
+        padding: 1.1rem;
+        border-radius: 18px;
+    }
+
+    .form-header h3 {
+        font-size: 1.2rem;
+    }
+
+    .form-actions {
+        flex-direction: column-reverse;
+    }
+
+    .form-actions .btn {
+        width: 100%;
+    }
+}
 </style>

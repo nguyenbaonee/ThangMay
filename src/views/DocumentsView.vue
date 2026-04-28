@@ -1,12 +1,22 @@
 <script setup>
-import { FileText, Download, Eye, ExternalLink, Filter, Loader2 } from 'lucide-vue-next'
-import { onMounted, ref, watch } from 'vue'
+import { Calendar, Download, Eye, FileText, Loader2 } from 'lucide-vue-next'
+import { computed, onMounted, ref, watch } from 'vue'
 import documentApi from '@/api/documentApi'
 
 const isLoading = ref(true)
 const documents = ref([])
 const categories = ref([{ id: 'all', name: 'Tất cả' }])
 const activeCategoryId = ref('all')
+
+const activeCategoryName = computed(
+  () => categories.value.find((item) => item.id === activeCategoryId.value)?.name || 'Tất cả'
+)
+
+const formatFileSize = (value) => {
+  if (!value) return null
+  const sizeMb = value / 1024
+  return `${sizeMb.toFixed(1)} MB`
+}
 
 const fetchCategories = async () => {
   try {
@@ -22,16 +32,25 @@ const fetchCategories = async () => {
 const fetchDocuments = async () => {
   isLoading.value = true
   try {
-    const params = {
+    const res = await documentApi.getPublic({
       categoryId: activeCategoryId.value === 'all' ? null : activeCategoryId.value,
-      isPublic: true
-    }
-    const res = await documentApi.search(params)
+      isPublic: true,
+      size: 24
+    })
     documents.value = res.data?.content || res.data?.items || res.data || []
   } catch (error) {
     console.error('Error fetching documents:', error)
+    documents.value = []
   } finally {
     isLoading.value = false
+  }
+}
+
+const recordDownload = async (doc) => {
+  try {
+    await documentApi.recordDownload?.(doc.id)
+  } catch {
+    // Ignore analytics failure on public UI
   }
 }
 
@@ -44,240 +63,339 @@ watch(activeCategoryId, fetchDocuments)
 </script>
 
 <template>
-  <div class="documents">
+  <div class="documents-page">
     <section class="subpage-hero">
-      <div class="hero-bg">
-        <img src="https://images.unsplash.com/photo-1541819361361-b5413156942a?q=80&w=2000" alt="Documents Hero" />
-        <div class="hero-overlay"></div>
-      </div>
-      <div class="container hero-content text-center">
-        <h1>Tài Liệu Kỹ Thuật</h1>
-        <p>Tải xuống các tài liệu, brochure và hướng dẫn sử dụng mới nhất.</p>
+      <div class="hero-bg"></div>
+    </section>
+
+    <section class="section-padding intro-section">
+      <div class="container">
+        <div class="intro-copy">
+          <h1>Tài liệu kỹ thuật và brochure từ Misel</h1>
+          <p>
+            Truy cập nhanh các brochure, tài liệu kỹ thuật và hướng dẫn cần thiết
+            để hỗ trợ quá trình lựa chọn, triển khai và vận hành thang máy.
+          </p>
+        </div>
       </div>
     </section>
 
-    <section class="section-padding container">
-      <div class="doc-layout gap-4 mb-5">
-        <div class="filters-sidebar glass">
-          <h3>Bộ lọc</h3>
-          <div class="filter-group">
-            <label>Loại tài liệu</label>
-            <select v-model="activeCategoryId">
-              <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-                {{ cat.name }}
-              </option>
-            </select>
-          </div>
-          <button class="btn btn-primary w-full mt-3" @click="fetchDocuments"><Filter :size="16" /> Lọc ngay</button>
+    <section class="container documents-body">
+      <div class="filter-shell">
+        <div class="filter-field">
+          <label for="doc-category">Loại tài liệu</label>
+          <select id="doc-category" v-model="activeCategoryId">
+            <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+              {{ cat.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div v-if="isLoading" class="loading-state">
+        <Loader2 class="spinner text-primary" :size="44" />
+      </div>
+
+      <template v-else>
+        <div class="section-head">
+          <h3>{{ activeCategoryName === 'Tất cả' ? 'Tài liệu mới nhất' : activeCategoryName }}</h3>
+          <p>{{ documents.length }} tài liệu đang hiển thị</p>
         </div>
 
-        <div class="documents-list min-h-300">
-          <div v-if="isLoading" class="flex-center py-5">
-            <Loader2 class="spinner text-primary" :size="48" />
-          </div>
-          <template v-else>
-            <div v-if="documents.length === 0" class="text-center py-5 text-muted">
-              Chưa có tài liệu nào trong danh mục này.
+        <div v-if="documents.length === 0" class="empty-state">
+          <h3>Chưa có tài liệu phù hợp</h3>
+          <p>Danh mục này hiện chưa có tài liệu công khai để hiển thị.</p>
+        </div>
+
+        <div v-else class="documents-grid">
+          <article
+            v-for="doc in documents"
+            :key="doc.id"
+            class="doc-card"
+          >
+            <div class="doc-preview">
+              <FileText :size="42" stroke-width="1.5" />
             </div>
-            <div v-for="doc in documents" :key="doc.id" class="doc-card glass animate-fade-in">
-              <div class="doc-preview">
-                  <FileText :size="48" stroke-width="1" class="text-primary" />
+
+            <div class="doc-content">
+              <div class="doc-meta">
+                <span v-if="doc.category" class="doc-tag">{{ doc.category?.name || doc.category?.slug || doc.category }}</span>
+                <span v-if="doc.createdAt" class="doc-meta-item"><Calendar :size="14" /> {{ new Date(doc.createdAt).toLocaleDateString('vi-VN') }}</span>
               </div>
-              <div class="doc-info">
-                <div v-if="doc.category" class="badge-type">{{ doc.category?.name || doc.category?.slug || doc.category }}</div>
-                <h3>{{ doc.title }}</h3>
-                <div class="doc-meta">
-                  <span v-if="doc.fileType">{{ doc.fileType }}</span>
-                  <span v-if="doc.fileSizeKb">{{ (doc.fileSizeKb / 1024).toFixed(1) }} MB</span>
-                  <span v-if="doc.downloadCount">{{ doc.downloadCount }} lượt tải</span>
-                </div>
+
+              <h4>{{ doc.title }}</h4>
+
+              <div class="doc-stats">
+                <span v-if="doc.fileType">{{ doc.fileType }}</span>
+                <span v-if="doc.fileSizeKb">{{ formatFileSize(doc.fileSizeKb) }}</span>
+                <span v-if="doc.downloadCount !== undefined">{{ doc.downloadCount || 0 }} lượt tải</span>
               </div>
+
               <div class="doc-actions">
-                <a :href="doc.driveUrl" target="_blank" class="btn-icon" title="Xem trực tuyến"><Eye :size="20" /></a>
-                <a :href="doc.driveUrl" target="_blank" class="btn-icon primary" title="Tải xuống"><Download :size="20" /></a>
+                <a :href="doc.driveUrl" target="_blank" rel="noreferrer" class="doc-link">
+                  <Eye :size="16" />
+                  Xem tài liệu
+                </a>
+                <a
+                  :href="doc.driveUrl"
+                  target="_blank"
+                  rel="noreferrer"
+                  class="doc-button"
+                  @click="recordDownload(doc)"
+                >
+                  <Download :size="16" />
+                  Tải xuống
+                </a>
               </div>
             </div>
-          </template>
+          </article>
         </div>
-      </div>
-    </section>
 
-    <!-- Request Custom Doc -->
-    <section class="bg-light section-padding">
-        <div class="container text-center">
-            <h2 class="mb-4">Bạn cần tài liệu kỹ thuật chi tiết hơn?</h2>
-            <p class="mb-5 opacity-0.8">Hãy gửi email yêu cầu trực tiếp cho đội ngũ kỹ sư của chúng tôi để được cung cấp các bản vẽ mặt cắt hố thang cụ thể.</p>
-            <router-link to="/contact" class="btn btn-primary lg">Gửi yêu cầu tài liệu</router-link>
-        </div>
+        <section class="cta-panel">
+          <div class="cta-copy">
+            <h3>Bạn cần tài liệu chuyên sâu hơn?</h3>
+            <p>Gửi yêu cầu để đội ngũ kỹ thuật của Misel hỗ trợ đúng loại tài liệu bạn đang cần.</p>
+          </div>
+          <router-link to="/contact" class="cta-button">Gửi yêu cầu tài liệu</router-link>
+        </section>
+      </template>
     </section>
   </div>
 </template>
 
 <style scoped>
 .subpage-hero {
-  height: 400px;
-  position: relative;
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+.documents-page {
+  background:
+    radial-gradient(circle at top right, rgba(193, 160, 82, 0.08), transparent 28%),
+    linear-gradient(180deg, #f8f6f0 0%, #ffffff 16%);
+}
+
+.intro-section {
+  padding-top: 182px;
+  padding-bottom: 28px;
+}
+
+.intro-copy {
+  max-width: 780px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.intro-copy h1 {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 3rem;
+  font-weight: 600;
+  line-height: 1.18;
+  margin-bottom: 1rem;
+  color: #1e1b18;
+}
+
+.intro-copy p {
+  max-width: 680px;
+  margin: 0 auto;
+  font-size: 1.02rem;
+  line-height: 1.75;
+  color: #5d5b59;
+}
+
+.documents-body {
+  padding-bottom: 80px;
+}
+
+.filter-shell {
+  max-width: 520px;
+  margin: 0 auto 2rem;
+  padding: 1.2rem;
+  background: #fff;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 23, 42, 0.05);
+  box-shadow: 0 18px 34px rgba(16, 24, 40, 0.07);
+}
+
+.filter-field label {
+  display: block;
+  margin-bottom: 0.55rem;
+  font-weight: 600;
+  color: #2c2825;
+}
+
+.filter-field select {
+  width: 100%;
+  min-height: 52px;
+  padding: 0.95rem 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(193, 160, 82, 0.38);
+  outline: none;
+  font-size: 0.98rem;
+  color: #2f2b28;
+  background: #fff;
+}
+
+.section-head {
   display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+
+.section-head h3 {
+  font-size: 2rem;
+  color: #1e1b18;
+}
+
+.section-head p {
+  color: #6b6966;
+}
+
+.loading-state,
+.empty-state {
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: white;
+  text-align: center;
 }
 
-.subpage-hero .hero-bg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-}
-
-.subpage-hero .hero-bg img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.subpage-hero h1 {
-  font-size: 3.5rem;
-  color: white;
-  margin-bottom: 1rem;
-}
-
-.doc-layout {
-    display: flex;
-    align-items: flex-start;
-    gap: 3rem;
-}
-
-.filters-sidebar {
-    width: 300px;
-    padding: 2rem;
-    border-radius: 12px;
-}
-
-.filters-sidebar h3 {
-    margin-bottom: 1.5rem;
-}
-
-.filter-group {
-    margin-bottom: 1.5rem;
-}
-
-.filter-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-}
-
-.filter-group select {
-    width: 100%;
-    padding: 0.8rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    outline: none;
-}
-
-.documents-list {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+.documents-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
 }
 
 .doc-card {
-    display: flex;
-    align-items: center;
-    gap: 2rem;
-    padding: 1.5rem;
-    border-radius: 12px;
-    background: white !important;
-    transition: var(--transition);
-}
-
-.doc-card:hover {
-    transform: translateX(10px);
-    box-shadow: var(--shadow);
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.05);
+  box-shadow: 0 16px 32px rgba(16, 24, 40, 0.08);
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
 }
 
 .doc-preview {
-    width: 80px;
-    height: 80px;
-    border-radius: 8px;
-    background: rgba(193, 160, 82, 0.05);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+  width: 74px;
+  height: 74px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #f7e7ad 0%, #ead08a 100%);
+  color: #896618;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1rem;
 }
 
-.doc-info {
-    flex: 1;
-}
-
-.badge-type {
-    display: inline-block;
-    background: #f0f0f0;
-    padding: 0.2rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--text-light);
-    margin-bottom: 0.5rem;
-}
-
-.doc-info h3 {
-    font-size: 1.25rem;
-    margin-bottom: 0.5rem;
-    color: var(--secondary);
+.doc-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .doc-meta {
-    display: flex;
-    gap: 1.5rem;
-    font-size: 0.85rem;
-    color: var(--text-light);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.8rem;
+  margin-bottom: 0.7rem;
+  color: #6a6865;
+  font-size: 0.86rem;
+}
+
+.doc-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.doc-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.32rem 0.62rem;
+  border-radius: 8px;
+  background: #f5e6a7;
+  color: #88630d;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.doc-content h4 {
+  font-size: 1.12rem;
+  line-height: 1.45;
+  color: #191715;
+  margin-bottom: 0.8rem;
+}
+
+.doc-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 0.9rem;
+  color: #6a6865;
+  font-size: 0.9rem;
+  margin-bottom: 1rem;
 }
 
 .doc-actions {
-    display: flex;
-    gap: 1rem;
-}
-
-.btn-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    border: 1px solid #ddd;
-    background: white;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: var(--transition);
-    color: inherit;
-    text-decoration: none;
-}
-
-.btn-icon:hover {
-    border-color: var(--primary);
-    color: var(--primary);
-}
-
-.btn-icon.primary {
-    background: var(--primary);
-    color: white;
-    border: none;
-}
-
-.min-h-300 {
-  min-height: 300px;
-}
-
-.flex-center {
+  margin-top: auto;
   display: flex;
-  justify-content: center;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.doc-link,
+.doc-button,
+.cta-button {
+  display: inline-flex;
   align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border-radius: 999px;
+  padding: 0.78rem 1.1rem;
+  font-weight: 600;
+}
+
+.doc-link {
+  color: #aa8124;
+  background: rgba(193, 160, 82, 0.08);
+}
+
+.doc-button,
+.cta-button {
+  background: linear-gradient(180deg, #d3ae4c 0%, #b98d2b 100%);
+  color: white;
+  box-shadow: 0 12px 24px rgba(193, 160, 82, 0.24);
+}
+
+.cta-panel {
+  margin-top: 3rem;
+  padding: 1.7rem 2rem;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #0b315f 0%, #0c2242 100%);
+  box-shadow: 0 18px 34px rgba(3, 32, 68, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+
+.cta-copy h3 {
+  color: white;
+  font-size: 2rem;
+  margin-bottom: 0.35rem;
+}
+
+.cta-copy p {
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .spinner {
@@ -289,56 +407,84 @@ watch(activeCategoryId, fetchDocuments)
   to { transform: rotate(360deg); }
 }
 
-@media (max-width: 992px) {
-  .doc-layout {
-    flex-direction: column;
-  }
-  .filters-sidebar {
-    width: 100%;
+@media (max-width: 1100px) {
+  .documents-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 768px) {
-  .subpage-hero {
-    height: 260px;
+  .intro-section {
+    padding-top: 148px;
   }
 
-  .subpage-hero h1 {
-    font-size: 2rem;
+  .intro-copy h1 {
+    font-size: 2.2rem;
   }
 
-  .subpage-hero p {
-    font-size: 0.92rem;
+  .section-head {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
-  .filters-sidebar {
-    padding: 1.25rem;
+  .documents-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cta-panel {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1.35rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-shell {
+    padding: 1rem;
+    border-radius: 14px;
+  }
+
+  .documents-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.9rem;
   }
 
   .doc-card {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
+    padding: 0.9rem;
   }
 
   .doc-preview {
-    width: 64px;
-    height: 64px;
+    width: 58px;
+    height: 58px;
+    border-radius: 14px;
+    margin-bottom: 0.8rem;
   }
 
-  .doc-meta {
-    flex-wrap: wrap;
-    gap: 0.75rem 1rem;
+  .doc-content h4 {
+    font-size: 0.98rem;
+    line-height: 1.4;
+  }
+
+  .doc-meta,
+  .doc-stats {
+    font-size: 0.78rem;
+    gap: 0.4rem 0.55rem;
   }
 
   .doc-actions {
-    width: 100%;
-    justify-content: flex-start;
+    flex-direction: column;
+    gap: 0.55rem;
   }
 
-  .btn-icon {
-    width: 44px;
-    height: 44px;
+  .doc-link,
+  .doc-button {
+    width: 100%;
+    padding: 0.72rem 0.7rem;
+    font-size: 0.84rem;
+  }
+
+  .cta-copy h3 {
+    font-size: 1.55rem;
   }
 }
 </style>

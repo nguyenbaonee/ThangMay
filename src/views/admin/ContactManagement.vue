@@ -46,9 +46,16 @@ const toggleStatus = async (c) => {
 }
 
 const triggerDelete = (id) => { targetDeleteId.value = id; isConfirmOpen.value = true }
-const confirmDelete = () => {
-  contacts.value = contacts.value.filter(c => c.id !== targetDeleteId.value)
-  toast.success('Đã xoá liên hệ!'); isConfirmOpen.value = false
+const confirmDelete = async () => {
+  try {
+    await contactApi.delete(targetDeleteId.value)
+    contacts.value = contacts.value.filter(c => c.id !== targetDeleteId.value)
+    toast.success('Đã xoá liên hệ!')
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Không thể xoá liên hệ!')
+  } finally {
+    isConfirmOpen.value = false
+  }
 }
 
 const exportExcel = async () => {

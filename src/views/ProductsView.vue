@@ -303,7 +303,7 @@ watch(activeProductFilter, () => { fetchProducts() })
                 <Phone :size="14" />
                 Liên hệ
               </a>
-              <router-link :to="'/products/' + product.id" class="action-btn">
+              <router-link :to="{ name: 'product-detail', params: { id: product.id } }" class="action-btn">
                 Chi tiết →
               </router-link>
             </div>

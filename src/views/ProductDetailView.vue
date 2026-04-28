@@ -21,21 +21,21 @@ const isUuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9
 
 const fetchProduct = async () => {
   const productId = route.params.id
+  if (!productId) {
+    isLoading.value = false
+    return
+  }
   try {
-    if (!isUuid(productId)) {
-      product.value = null
-      return
-    }
-
     const res = await productApi.getById(productId)
     product.value = res.data
-    if (product.value.images && product.value.images.length > 0) {
+    if (product.value?.images?.length > 0) {
       activeImage.value = resolveImageUrl(product.value.images[0])
-    } else if (product.value.thumbnail) {
+    } else if (product.value?.thumbnail) {
       activeImage.value = resolveImageUrl(product.value.thumbnail.publicUrl || product.value.thumbnail.url)
     }
   } catch (error) {
     console.error('Error fetching product detail:', error)
+    product.value = null
   } finally {
     isLoading.value = false
   }
@@ -67,9 +67,6 @@ const galleryImages = computed(() => {
 
 <template>
   <div class="product-detail">
-    <div class="container py-subnav">
-      <router-link to="/products" class="back-link"><ArrowLeft :size="16" /> Quay lại</router-link>
-    </div>
 
     <div v-if="isLoading" class="flex-center py-5">
       <Loader2 class="spinner text-primary" :size="48" />
@@ -192,46 +189,31 @@ const galleryImages = computed(() => {
 </template>
 
 <style scoped>
-.py-subnav {
-  padding-top: 120px;
-  padding-bottom: 12px;
-}
-
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: var(--text-light);
-  padding: 0.25rem 0;
-  width: fit-content;
-  line-height: 1.2;
-}
-
-.back-link:hover {
-  color: var(--primary);
+/* ── Product detail wrapper ── */
+.product-detail {
+  padding-top: 130px;
 }
 
 .empty-state {
   padding: 0.5rem 0 1rem;
 }
 
+/* ── Product main grid (mobile-first = 1 col) ── */
 .product-main-grid {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 5rem;
+  grid-template-columns: 1fr;
+  gap: 2rem;
   align-items: flex-start;
 }
 
 .gallery-side {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .main-image {
-  height: 500px;
+  height: 280px;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: var(--shadow);
@@ -245,13 +227,13 @@ const galleryImages = computed(() => {
 
 .thumbnails {
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
   flex-wrap: wrap;
 }
 
 .thumb {
-  width: 80px;
-  height: 80px;
+  width: 64px;
+  height: 64px;
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
@@ -269,48 +251,54 @@ const galleryImages = computed(() => {
   object-fit: cover;
 }
 
+/* ── Info side ── */
 .info-side .label {
   color: var(--primary);
-  font-weight: 700;
-  margin-bottom: 1rem;
+  font-weight: 600;
+  font-style: italic;
+  font-size: 0.95rem;
+  margin-bottom: 0.6rem;
 }
 
 .info-side h1 {
-  font-size: 3rem;
-  margin-bottom: 1.5rem;
-  line-height: 1.2;
+  font-size: 2.1rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.25;
+  color: var(--secondary);
 }
 
 .price-big {
-  font-size: 2rem;
+  font-size: 1.6rem;
   color: var(--primary);
   font-weight: 800;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 .short-desc {
+  font-size: 0.9rem;
   color: var(--text-light);
-  line-height: 1.8;
-  margin-bottom: 3rem;
+  line-height: 1.7;
+  margin-bottom: 1.5rem;
 }
 
 .action-btns {
   display: flex;
-  gap: 2rem;
   align-items: center;
-  margin-bottom: 3rem;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .secondary-actions {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
 }
 
 .icon-btn {
-  width: 45px;
-  height: 45px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  border: 1px solid #ddd;
+  border: 1.5px solid #ddd;
   background: white;
   color: var(--text-light);
   cursor: pointer;
@@ -323,31 +311,33 @@ const galleryImages = computed(() => {
 .icon-btn:hover {
   border-color: var(--primary);
   color: var(--primary);
-  background: #fdfdfd;
 }
 
 .quick-info {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.65rem;
 }
 
 .info-item {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
+  gap: 0.6rem;
+  font-size: 0.9rem;
   font-weight: 500;
+  color: var(--text-main);
 }
 
 .primary-icon {
   color: var(--primary);
+  flex-shrink: 0;
 }
 
-/* Tabs */
+/* ── Tabs ── */
 .tabs-header {
   display: flex;
-  gap: 1rem;
-  border-bottom: 1px solid #eee;
+  gap: 1.5rem;
+  border-bottom: 1px solid #e5e5e5;
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: none;
@@ -362,15 +352,16 @@ const galleryImages = computed(() => {
 .tab-link {
   background: none;
   border: none;
-  padding: 1rem 0;
-  font-weight: 700;
-  font-size: 1.1rem;
+  padding: 0.9rem 0;
+  font-weight: 600;
+  font-size: 1rem;
   color: var(--text-light);
   cursor: pointer;
   position: relative;
   white-space: nowrap;
   flex: 0 0 auto;
   scroll-snap-align: start;
+  transition: color 0.2s;
 }
 
 .tab-link.active {
@@ -383,20 +374,21 @@ const galleryImages = computed(() => {
   bottom: -1px;
   left: 0;
   width: 100%;
-  height: 3px;
+  height: 2px;
   background: var(--primary);
+  border-radius: 2px;
 }
 
 .specs-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
 }
 
 .spec-row {
   display: flex;
   justify-content: space-between;
-  padding: 1.2rem;
+  padding: 1rem 1.25rem;
   background: #f8f9fa;
   border-radius: 8px;
 }
@@ -404,23 +396,26 @@ const galleryImages = computed(() => {
 .label-spec {
   color: var(--text-light);
   font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .value-spec {
   font-weight: 700;
   color: var(--secondary);
+  font-size: 0.9rem;
 }
 
 .custom-list {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
 .custom-list li {
   display: flex;
-  gap: 1rem;
+  gap: 0.8rem;
   align-items: center;
+  font-size: 0.95rem;
 }
 
 .li-icon {
@@ -430,7 +425,8 @@ const galleryImages = computed(() => {
 
 .rich-content {
   line-height: 1.8;
-  color: var(--text-dark);
+  color: var(--text-main);
+  font-size: 0.95rem;
 }
 
 .flex-center {
@@ -454,13 +450,64 @@ const galleryImages = computed(() => {
   grid-column: 1 / -1;
 }
 
-@media (max-width: 992px) {
-  .product-main-grid {
-    grid-template-columns: 1fr;
-    gap: 3rem;
+/* ── DESKTOP overrides (992px+) ── */
+@media (min-width: 993px) {
+  .py-subnav {
+    padding-top: 130px;
+    padding-bottom: 16px;
   }
+
+  .product-main-grid {
+    grid-template-columns: 1.15fr 1fr;
+    gap: 3.5rem;
+  }
+
   .main-image {
-      height: 350px;
+    height: 420px;
+    border-radius: 10px;
+  }
+
+  .thumb {
+    width: 72px;
+    height: 72px;
+  }
+
+  .thumbnails {
+    gap: 0.75rem;
+  }
+
+  .info-side h1 {
+    font-size: 2.4rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .price-big {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .short-desc {
+    font-size: 0.92rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .action-btns {
+    margin-bottom: 1.75rem;
+    gap: 0.85rem;
+  }
+
+  .tabs-header {
+    gap: 2rem;
+  }
+
+  .tab-link {
+    font-size: 1rem;
+    padding: 1rem 0;
+  }
+
+  .specs-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
   }
 }
 

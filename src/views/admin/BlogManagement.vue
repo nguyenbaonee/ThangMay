@@ -9,7 +9,11 @@ import mediaApi from '@/api/mediaApi'
 const isLoading = ref(false)
 const searchQuery = ref('')
 const blogs = ref([])
-const categories = ref([])
+const categories = ref([
+  { id: 'pc-news', name: 'Tin tức', slug: 'tin-tuc' },
+  { id: 'pc-project', name: 'Dự án nổi bật', slug: 'du-an-tieu-bieu' },
+  { id: 'pc-recruitment', name: 'Tuyển dụng', slug: 'tuyen-dung' }
+])
 
 const isModalOpen = ref(false)
 const isConfirmOpen = ref(false)
@@ -48,16 +52,13 @@ const typeOptions = [
 const fetchData = async () => {
   isLoading.value = true
   try {
-    const [catRes, postRes] = await Promise.allSettled([
-      postApi.categories(),
-      postApi.search({ keyword: searchQuery.value })
+    const [postRes] = await Promise.allSettled([
+      postApi.searchAdmin({ keyword: searchQuery.value })
     ])
-    if (catRes.status === 'fulfilled') categories.value = catRes.value?.data || []
     if (postRes.status === 'fulfilled') blogs.value = postRes.value?.data?.content || postRes.value?.data || []
   } catch (error) {
     console.error('Error fetching blogs:', error)
     blogs.value = []
-    categories.value = []
   } finally { isLoading.value = false }
 }
 onMounted(fetchData)

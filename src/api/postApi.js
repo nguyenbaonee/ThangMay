@@ -1,8 +1,21 @@
 import api from './axios'
 
 export const postApi = {
+  // Public list
+  getPublished: (params = {}) => api.get('/posts', {
+    params: {
+      type: params.type,
+      page: params.page ?? 0,
+      size: params.size ?? 20
+    }
+  }),
+
+  getFeatured: (type) => api.get('/posts/featured', {
+    params: { type }
+  }),
+
   // Admin search
-  search: (params = {}) => api.post('/posts/admin', {
+  searchAdmin: (params = {}) => api.post('/posts/admin', {
     keyword: params.keyword || '',
     type: params.type || null,
     status: params.status || null,

@@ -24,7 +24,7 @@ const fetchData = async () => {
   try {
     const [catRes, docRes] = await Promise.allSettled([
       documentApi.categories(),
-      documentApi.search({ keyword: searchQuery.value })
+      documentApi.searchAdmin({ keyword: searchQuery.value })
     ])
     if (catRes.status === 'fulfilled') docCategories.value = catRes.value?.data || []
     if (docRes.status === 'fulfilled') documents.value = docRes.value?.data?.content || docRes.value?.data || []

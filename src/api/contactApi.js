@@ -22,6 +22,8 @@ export const contactApi = {
     responseType: 'blob'
   }),
 
+  delete: (id) => api.delete(`/contacts/${id}`),
+
   dashboard: () => api.get('/contacts/dashboard'),
 }
 
