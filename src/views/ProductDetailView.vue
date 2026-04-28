@@ -19,32 +19,15 @@ const setTabRef = (el, key) => {
 
 const isUuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value || '')
 
-const resolveProductId = async (value) => {
-  if (isUuid(value)) return value
-
-  const searchRes = await productApi.publicSearch({ keyword: value, size: 50 })
-  const list = searchRes.data?.content || searchRes.data?.items || searchRes.data || []
-  if (!Array.isArray(list) || list.length === 0) return null
-
-  const matched = list.find((item) =>
-    item?.id === value ||
-    item?.slug === value ||
-    item?.name === value
-  ) || list[0]
-
-  return matched?.id || null
-}
-
 const fetchProduct = async () => {
   const productId = route.params.id
   try {
-    const resolvedId = await resolveProductId(productId)
-    if (!resolvedId) {
+    if (!isUuid(productId)) {
       product.value = null
       return
     }
 
-    const res = await productApi.getById(resolvedId)
+    const res = await productApi.getById(productId)
     product.value = res.data
     if (product.value.images && product.value.images.length > 0) {
       activeImage.value = resolveImageUrl(product.value.images[0])
@@ -231,7 +214,7 @@ const galleryImages = computed(() => {
 }
 
 .empty-state {
-  padding-top: 1.5rem;
+  padding: 0.5rem 0 1rem;
 }
 
 .product-main-grid {
@@ -483,7 +466,7 @@ const galleryImages = computed(() => {
 
 @media (max-width: 768px) {
   .py-subnav {
-    padding-top: 92px;
+    padding-top: 124px;
     padding-bottom: 8px;
   }
 
@@ -542,11 +525,17 @@ const galleryImages = computed(() => {
   .tab-content {
     padding: 1rem !important;
   }
+
+  .empty-state {
+    padding-top: 0.25rem;
+    padding-bottom: 0.5rem;
+    min-height: 0;
+  }
 }
 
 @media (max-width: 480px) {
   .py-subnav {
-    padding-top: 84px;
+    padding-top: 116px;
   }
 
   .main-image {
@@ -560,6 +549,12 @@ const galleryImages = computed(() => {
 
   .info-side h1 {
     font-size: 1.8rem;
+  }
+
+  .empty-state {
+    padding-top: 0.25rem;
+    padding-bottom: 0.5rem;
+    min-height: 0;
   }
 
   .tabs-header {

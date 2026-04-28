@@ -106,7 +106,12 @@ const values = [
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: -1;
+  z-index: 0;
+}
+
+.subpage-hero .hero-content {
+  position: relative;
+  z-index: 1;
 }
 
 .subpage-hero .hero-bg img {

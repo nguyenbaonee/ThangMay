@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Globe, Plus, Edit, Trash2, X, Search, Save, Eye, EyeOff, AlertTriangle, Loader2, Facebook, Instagram, Mail, Phone, ExternalLink, Image as ImageIcon } from 'lucide-vue-next'
+import { Globe, Save, Loader2, Facebook, Instagram, Mail, Phone, ExternalLink, Image as ImageIcon, Info } from 'lucide-vue-next'
 import { toast } from 'vue3-toastify'
 import 'vue3-toastify/dist/index.css'
 import companyContactApi from '@/api/companyContactApi'
@@ -138,13 +138,169 @@ const iconMap = {
 </template>
 
 <style scoped>
+.admin-page {
+    padding: 0.5rem 0 1rem;
+}
+
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.page-header h2 {
+    font-size: 1.75rem;
+    margin: 0;
+}
+
+.page-header .subtitle {
+    margin-top: 0.35rem;
+    font-size: 0.95rem;
+}
+
+.page-actions .btn {
+    min-height: 44px;
+    padding: 0.7rem 1.2rem;
+}
+
+.card {
+    max-width: 800px;
+    border-radius: 18px;
+}
+
+.modal-body {
+    gap: 1.25rem !important;
+}
+
 .section-title h4 {
     display: flex; align-items: center; gap: 0.5rem;
-    color: #1e293b; font-weight: 700; font-size: 1rem;
-    border-bottom: 2px solid #818cf8; padding-bottom: 0.5rem;
+    color: #1e293b; font-weight: 700; font-size: 0.98rem;
+    border-bottom: 2px solid #818cf8; padding-bottom: 0.45rem;
 }
-.flex-1 { flex: 1; min-width: 250px; }
+.flex-1 { flex: 1; min-width: 220px; }
 .form-group label {
     display: flex; align-items: center; gap: 0.4rem;
+    margin-bottom: 0.45rem;
+    font-size: 0.95rem;
+}
+
+.form-control {
+    width: 100%;
+    min-height: 42px;
+    border: 1px solid #dbe3ef;
+    border-radius: 12px;
+    padding: 0.75rem 0.95rem;
+    background: #fff;
+}
+
+.form-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.form-group {
+    margin-bottom: 0.25rem;
+}
+
+.logo-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 72px;
+    padding: 0.35rem 0.5rem;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+}
+
+.loading-overlay {
+    min-height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.spinner {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 3px solid #cbd5e1;
+    border-top-color: #6366f1;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+    .admin-page {
+        padding: 0.15rem 0 0.5rem;
+    }
+
+    .page-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.35rem;
+        margin-bottom: 0.7rem;
+    }
+
+    .page-header h2 {
+        font-size: 1.2rem;
+        line-height: 1.2;
+    }
+
+    .page-header .subtitle {
+        font-size: 0.82rem;
+    }
+
+    .card {
+        border-radius: 12px;
+    }
+
+    .modal-body {
+        padding: 0.85rem !important;
+        gap: 0.85rem !important;
+    }
+
+    .section-title h4 {
+        font-size: 0.88rem;
+    }
+
+    .form-row {
+        gap: 0.7rem;
+    }
+
+    .flex-1 {
+        min-width: 100%;
+    }
+
+    .form-control {
+        min-height: 38px;
+        border-radius: 10px;
+        padding: 0.65rem 0.8rem;
+        font-size: 0.92rem;
+    }
+
+    .logo-preview {
+        min-width: 64px;
+    }
+
+    .page-actions .btn {
+        width: 100%;
+        min-height: 40px;
+        padding: 0.6rem 1rem;
+    }
+
+    .section-title.mt-4 {
+        margin-top: 0.75rem !important;
+    }
+
+    .logo-preview {
+        display: none;
+    }
 }
 </style>

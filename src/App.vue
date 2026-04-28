@@ -2,7 +2,6 @@
 import { onMounted } from 'vue'
 
 onMounted(() => {
-  // Smooth scroll logic or global AOS animations can be initialized here
 })
 </script>
 
@@ -13,7 +12,6 @@ onMounted(() => {
 </template>
 
 <style>
-/* Global scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -31,7 +29,6 @@ onMounted(() => {
   background: var(--primary-dark);
 }
 
-/* Base Utility Classes */
 .mt-4 { margin-top: 1rem; }
 .mt-5 { margin-top: 2rem; }
 .mb-4 { margin-bottom: 1rem; }
@@ -48,7 +45,6 @@ onMounted(() => {
 .rounded-20 { border-radius: 20px; }
 .overflow-hidden { overflow: hidden; }
 
-/* Custom Animations */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }

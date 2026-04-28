@@ -78,11 +78,24 @@ const normalizeHotline = (value) => {
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  transition: var(--transition);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, filter 0.25s ease;
+  transform-origin: center;
 }
 
 .floating-btn:hover {
-  transform: scale(1.1);
+  animation: supportHoverPulse 0.8s ease-in-out infinite alternate;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.26);
+}
+
+.floating-btn img,
+.floating-btn :deep(svg) {
+  transition: transform 0.25s ease, filter 0.25s ease;
+}
+
+.floating-btn:hover img,
+.floating-btn:hover :deep(svg) {
+  transform: scale(1.08);
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.18));
 }
 
 .zalo {
@@ -97,6 +110,15 @@ const normalizeHotline = (value) => {
 .phone {
   background: var(--primary);
   color: white;
+}
+
+@keyframes supportHoverPulse {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.14);
+  }
 }
 
 /* Page transitions */
@@ -133,6 +155,15 @@ const normalizeHotline = (value) => {
   .floating-btn {
     width: 42px;
     height: 42px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .floating-btn,
+  .floating-btn img,
+  .floating-btn :deep(svg) {
+    transition: none;
+    animation: none;
   }
 }
 </style>

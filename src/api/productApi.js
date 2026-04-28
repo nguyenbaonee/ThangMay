@@ -3,12 +3,17 @@ import api from './axios'
 export const productApi = {
   // Public search
   publicSearch: (params = {}) => api.post('/products/search', {
-    keyword: params.keyword || '',
+    keyword:    params.keyword    || '',
     categoryId: params.categoryId || null,
-    featured: params.featured ?? null,
-    isActive: true,
-    page: params.page ?? 0,
-    size: params.size ?? 20
+    featured:   params.featured   ?? null,
+    isActive:   true,
+    page:       params.page       ?? 0,
+    size:       params.size       ?? 20,
+    // Spec filters
+    loadMin:  params.loadMin  ?? null,
+    loadMax:  params.loadMax  ?? null,
+    speedMin: params.speedMin ?? null,
+    speedMax: params.speedMax ?? null,
   }),
 
   // Admin search

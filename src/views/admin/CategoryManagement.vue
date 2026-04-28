@@ -1,9 +1,10 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { Plus, Edit, Trash2, X, Search, Save, Eye, EyeOff, AlertTriangle, Loader2 } from 'lucide-vue-next'
+import { Plus, Edit, Trash2, X, Search, Save, Eye, EyeOff, AlertTriangle, Loader2, UploadCloud, Image as ImageIcon } from 'lucide-vue-next'
 import { toast } from 'vue3-toastify'
 import 'vue3-toastify/dist/index.css'
 import categoryApi from '@/api/categoryApi'
+import mediaApi from '@/api/mediaApi'
 
 const isLoading = ref(false)
 const searchQuery = ref('')
@@ -14,6 +15,7 @@ const isConfirmOpen = ref(false)
 const modalMode = ref('create')
 const targetDeleteId = ref(null)
 const saving = ref(false)
+const isUploadingIcon = ref(false)
 
 const initialForm = { id: null, name: '', slug: '', description: '', icon: '', sortOrder: 0, isActive: true }
 const form = ref({ ...initialForm })
@@ -37,8 +39,23 @@ const filtered = computed(() => {
 })
 
 const openCreate = () => { modalMode.value = 'create'; form.value = { ...initialForm }; isModalOpen.value = true }
-const openEdit = (c) => { modalMode.value = 'edit'; form.value = { ...c }; isModalOpen.value = true }
+const openEdit = (c) => { modalMode.value = 'edit'; form.value = { ...c, icon: c.iconUrl || c.icon }; isModalOpen.value = true }
 const closeModal = () => { isModalOpen.value = false }
+
+const onIconSelected = async (e) => {
+  const file = e.target.files[0]
+  if (!file) return
+  isUploadingIcon.value = true
+  try {
+    const res = await mediaApi.uploadSingle(file, 'categories')
+    form.value.icon = res.data.publicUrl || res.data.url
+    toast.success('Upload ảnh thành công!')
+  } catch (err) {
+    toast.error('Lỗi upload ảnh!')
+  } finally {
+    isUploadingIcon.value = false
+  }
+}
 
 const saveCategory = async () => {
   if (!form.value.name) { toast.error('Vui lòng nhập Tên danh mục!'); return }
@@ -125,19 +142,85 @@ const confirmDelete = async () => {
           <button class="act-btn" @click="closeModal"><X :size="20" /></button>
         </div>
         <div class="modal-body">
-          <div class="form-row">
-            <div class="form-group"><label>Tên danh mục <span class="text-danger">*</span></label><input v-model="form.name" class="form-control" placeholder="Tên loại thang máy..." /></div>
-            <div class="form-group"><label>Slug</label><input v-model="form.slug" class="form-control" placeholder="thang-may-gia-dinh" /></div>
+          <!-- Image Upload Area -->
+          <div class="form-group">
+            <div 
+              class="upload-dropzone" 
+              :class="{ 'has-image': form.icon }"
+              @click="$refs.fileInput.click()"
+            >
+              <input 
+                type="file" 
+                ref="fileInput"
+                accept="image/*" 
+                @change="onIconSelected" 
+                :disabled="isUploadingIcon" 
+                hidden
+              />
+              
+              <div v-if="!form.icon && !isUploadingIcon" class="upload-placeholder">
+                <div class="upload-icon-circle">
+                  <ImageIcon :size="32" />
+                </div>
+                <p class="upload-text-main">Ảnh đại diện</p>
+                <p class="upload-text-sub">Dung lượng tối đa 2MB. Định dạng: JPG, PNG.</p>
+              </div>
+
+              <div v-else-if="isUploadingIcon" class="upload-loading">
+                <Loader2 :size="32" class="spinner" />
+                <p>Đang tải ảnh lên...</p>
+              </div>
+
+              <div v-else class="upload-preview-container">
+                <img :src="form.icon" alt="Preview" class="upload-preview-img" />
+                <div class="upload-preview-overlay">
+                  <UploadCloud :size="24" />
+                  <span>Thay đổi ảnh</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="form-row">
-            <div class="form-group"><label>Thứ tự</label><input type="number" v-model="form.sortOrder" class="form-control" /></div>
-            <div class="form-group"><label>Icon</label><input v-model="form.icon" class="form-control" placeholder="Icon class hoặc URL" /></div>
+
+          <div class="form-group">
+            <label>Tên danh mục <span class="text-danger">*</span></label>
+            <input v-model="form.name" class="form-control" placeholder="Nhập tên danh mục..." />
           </div>
-          <div class="form-group"><label>Mô tả</label><textarea v-model="form.description" class="form-control" rows="3" placeholder="Nhập mô tả..."></textarea></div>
+
+          <div class="form-group">
+            <label>Slug <Edit :size="14" /></label>
+            <input v-model="form.slug" class="form-control slug-input" placeholder="ten-danh-muc-tu-dong" />
+            <p class="form-hint">Tự động tạo từ tên danh mục để tối ưu SEO.</p>
+          </div>
+
+          <div class="form-group">
+            <label>Thứ tự</label>
+            <input type="number" v-model="form.sortOrder" class="form-control" />
+          </div>
+
+          <div class="form-group">
+            <label>Trạng thái</label>
+            <div class="radio-group">
+              <label class="radio-item">
+                <input type="radio" :value="true" v-model="form.isActive" />
+                <span class="radio-mark"></span> Hiện
+              </label>
+              <label class="radio-item">
+                <input type="radio" :value="false" v-model="form.isActive" />
+                <span class="radio-mark"></span> Ẩn
+              </label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Mô tả</label>
+            <textarea v-model="form.description" class="form-control" rows="4" placeholder="Nhập mô tả ngắn cho danh mục này..."></textarea>
+          </div>
         </div>
         <div class="modal-foot">
           <button class="btn btn-outline" @click="closeModal">Huỷ</button>
-          <button class="btn btn-primary" @click="saveCategory" :disabled="saving"><Save :size="16" /> Lưu</button>
+          <button class="btn btn-primary" @click="saveCategory" :disabled="saving">
+            <Loader2 v-if="saving" :size="16" class="spinner" /> <Save v-else :size="16" /> Lưu
+          </button>
         </div>
       </div>
     </div>
@@ -156,3 +239,152 @@ const confirmDelete = async () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.upload-dropzone {
+  border: 2px dashed #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: #f8fafc;
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-dropzone:hover {
+  border-color: var(--admin-primary);
+  background: #f1f5f9;
+}
+
+.upload-dropzone.has-image {
+  padding: 0;
+  border-style: solid;
+}
+
+.upload-icon-circle {
+  width: 56px;
+  height: 56px;
+  background: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.75rem;
+  color: #94a3b8;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.upload-text-main {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+}
+
+.upload-text-sub {
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.upload-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  color: var(--admin-primary);
+}
+
+.upload-preview-container {
+  width: 100%;
+  height: 160px;
+  position: relative;
+}
+
+.upload-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #f8fafc;
+}
+
+.upload-preview-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  gap: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.upload-preview-container:hover .upload-preview-overlay {
+  opacity: 1;
+}
+
+.slug-input {
+  background: #f1f5f9 !important;
+  font-family: monospace;
+  font-size: 0.85rem;
+}
+
+.form-hint {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 0.25rem;
+}
+
+/* Radio Group Styling */
+.radio-group {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.25rem;
+}
+
+.radio-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #334155;
+}
+
+.radio-item input {
+  display: none;
+}
+
+.radio-mark {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #cbd5e1;
+  border-radius: 50%;
+  position: relative;
+  transition: 0.2s;
+}
+
+.radio-item input:checked + .radio-mark {
+  border-color: var(--admin-primary);
+}
+
+.radio-item input:checked + .radio-mark::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  background: var(--admin-primary);
+  border-radius: 50%;
+}
+</style>
