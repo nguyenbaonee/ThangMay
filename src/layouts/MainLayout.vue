@@ -1,6 +1,7 @@
 <script setup>
 import Header from '../components/Header.vue'
 import Footer from '../components/Footer.vue'
+import FloatingContactButtons from '../components/FloatingContactButtons.vue'
 </script>
 
 <template>
@@ -14,6 +15,7 @@ import Footer from '../components/Footer.vue'
       </router-view>
     </main>
     <Footer />
+    <FloatingContactButtons />
   </div>
 </template>
 
