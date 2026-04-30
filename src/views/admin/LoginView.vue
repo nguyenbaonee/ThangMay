@@ -45,7 +45,7 @@ const handleLogin = async () => {
     <div class="login-card animate-in">
       <div class="login-header">
         <div class="logo-box">
-          <span class="logo-icon">E</span>
+          <span class="logo-icon">L</span>
         </div>
         <h1>Hệ thống Quản trị</h1>
         <p>Vui lòng đăng nhập để tiếp tục</p>

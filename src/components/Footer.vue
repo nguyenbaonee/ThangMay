@@ -29,7 +29,7 @@ const normalizeHotline = (value) => {
         <!-- Brand -->
         <div class="footer-brand">
           <router-link to="/" class="logo">
-            <span class="logo-text">Misel</span>
+            <span class="logo-text">logomishdrg</span>
             <span class="logo-subtext">Elevating Living</span>
           </router-link>
           <p class="brand-desc">
@@ -96,7 +96,7 @@ const normalizeHotline = (value) => {
     <!-- Bottom -->
     <div class="footer-bottom">
       <div class="container bottom-content">
-        <p>&copy; 2024 Misel ELEVATOR. All rights reserved.</p>
+        <p>&copy; 2024 logomishdrg ELEVATOR. All rights reserved.</p>
         <div class="bottom-links">
           <a href="#">Điều khoản sử dụng</a>
           <a href="#">Chính sách bảo mật</a>

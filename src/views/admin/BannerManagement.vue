@@ -37,6 +37,12 @@ const createEmptySlots = () => ([
   { imageUrl: '', sortOrder: 4, isActive: true, uploading: false }
 ])
 
+const resolveActive = (value, fallback = true) => {
+  if (typeof value?.isActive === 'boolean') return value.isActive
+  if (typeof value?.active === 'boolean') return value.active
+  return fallback
+}
+
 const toggleSlotStatus = (index) => {
   const slot = centerSlots.value[index]
   if (!slot.imageUrl) {
@@ -127,7 +133,7 @@ const openEdit = (b) => {
         nextSlots[index] = {
           imageUrl: item.imageUrl || '',
           sortOrder: item.sortOrder ?? index + 1,
-          isActive: item.isActive ?? true,
+          isActive: resolveActive(item),
           uploading: false
         }
       })
@@ -140,11 +146,11 @@ const openEdit = (b) => {
       linkUrl: b.linkUrl || '',
       position: 'CENTER',
       sortOrder: b.sortOrder ?? 0,
-      isActive: b.isActive ?? true,
+      isActive: resolveActive(b),
       groupCode: b.groupCode || null
     }
   } else {
-    form.value = { ...b }
+    form.value = { ...b, isActive: resolveActive(b) }
     centerSlots.value = createEmptySlots()
   }
   isModalOpen.value = true
@@ -192,17 +198,21 @@ const saveBanner = async () => {
       linkUrl: form.value.linkUrl?.trim() || null,
       position: 'TOP',
       sortOrder: form.value.sortOrder ?? 0,
-      isActive: form.value.isActive
+      isActive: form.value.isActive,
+      active: form.value.isActive
     }
 
     const centerPayload = {
       title: form.value.title.trim(),
       linkUrl: form.value.linkUrl?.trim() || null,
       position: 'CENTER',
+      isActive: form.value.isActive,
+      active: form.value.isActive,
       items: centerSlots.value.map(slot => ({
         imageUrl: slot.imageUrl,
         sortOrder: Number(slot.sortOrder),
-        isActive: slot.isActive
+        isActive: slot.isActive,
+        active: slot.isActive
       }))
     }
 
@@ -274,8 +284,8 @@ const confirmDelete = async () => {
               <td class="text-muted text-sm truncate" style="max-width:200px">{{ b.linkUrl || '—' }}</td>
               <td class="text-center font-bold">{{ b.sortOrder }}</td>
               <td class="text-center">
-                <span :class="['badge', b.isActive ? 'badge-active' : 'badge-inactive']">
-                  {{ b.isActive ? 'Đang bật' : 'Đang ẩn' }}
+                <span :class="['badge', resolveActive(b, false) ? 'badge-active' : 'badge-inactive']">
+                  {{ resolveActive(b, false) ? 'Đang bật' : 'Đang ẩn' }}
                 </span>
               </td>
               <td>

@@ -49,16 +49,25 @@ const typeOptions = [
   { value: 'RECRUITMENT', label: 'Tuyển dụng' }
 ]
 
+const filteredCategories = computed(() => {
+  const selectedType = form.value.type
+  if (!selectedType || selectedType === 'BLOG') return categories.value
+  return categories.value.filter((category) => category.type === selectedType)
+})
+
 const fetchData = async () => {
   isLoading.value = true
   try {
-    const [postRes] = await Promise.allSettled([
-      postApi.searchAdmin({ keyword: searchQuery.value })
+    const [postRes, categoryRes] = await Promise.allSettled([
+      postApi.searchAdmin({ keyword: searchQuery.value }),
+      postApi.categories()
     ])
     if (postRes.status === 'fulfilled') blogs.value = postRes.value?.data?.content || postRes.value?.data || []
+    if (categoryRes.status === 'fulfilled') categories.value = categoryRes.value?.data || []
   } catch (error) {
     console.error('Error fetching blogs:', error)
     blogs.value = []
+    categories.value = []
   } finally { isLoading.value = false }
 }
 onMounted(fetchData)
@@ -216,7 +225,7 @@ const confirmDelete = async () => {
               <label>Danh mục</label>
               <select v-model="form.categoryId" class="form-control">
                 <option value="">— Chọn danh mục —</option>
-                <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
+                <option v-for="c in filteredCategories" :key="c.id" :value="c.id">{{ c.name }}</option>
               </select>
             </div>
           </div>
