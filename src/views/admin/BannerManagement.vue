@@ -106,10 +106,35 @@ const fetchData = async () => {
 
 onMounted(fetchData)
 
+// Group CENTER banners by groupCode → show as 1 row; TOP banners stay individual
+const groupedBanners = computed(() => {
+  const seen = new Set()
+  const result = []
+  for (const b of banners.value) {
+    if (b.position === 'CENTER' && b.groupCode) {
+      if (seen.has(b.groupCode)) continue // skip duplicates in same group
+      seen.add(b.groupCode)
+      // Collect all items in this group
+      const groupItems = banners.value
+        .filter(x => x.groupCode === b.groupCode)
+        .sort((a, c) => (a.sortOrder ?? 0) - (c.sortOrder ?? 0))
+      result.push({
+        ...b,
+        _groupItems: groupItems,
+        // Status: active nếu có ít nhất 1 item active
+        isActive: groupItems.some(x => x.isActive)
+      })
+    } else {
+      result.push(b)
+    }
+  }
+  return result
+})
+
 const filteredBanners = computed(() => {
-  if (!searchQuery.value) return banners.value
+  if (!searchQuery.value) return groupedBanners.value
   const q = searchQuery.value.toLowerCase()
-  return banners.value.filter(b => b.title?.toLowerCase().includes(q) || b.position?.toLowerCase().includes(q))
+  return groupedBanners.value.filter(b => b.title?.toLowerCase().includes(q) || b.position?.toLowerCase().includes(q))
 })
 
 const openCreate = () => {
@@ -276,16 +301,36 @@ const confirmDelete = async () => {
               <td colspan="7"><div class="empty-state"><ImageIcon :size="40" /><p>Chưa có banner nào</p></div></td>
             </tr>
             <tr v-for="b in filteredBanners" :key="b.id">
+              <!-- Ảnh: CENTER → strip thumbnail nhóm; TOP → ảnh đơn -->
               <td>
-                <img :src="b.imageUrl" class="thumb-md" alt="" style="width:100px; height:60px; object-fit:cover; border-radius:4px" />
+                <div v-if="b.position === 'CENTER' && b._groupItems?.length" class="thumb-group">
+                  <img
+                    v-for="(item, i) in b._groupItems.slice(0, 4)"
+                    :key="i"
+                    :src="item.imageUrl"
+                    :title="`Ảnh ${item.sortOrder}`"
+                    class="thumb-group-img"
+                    :class="{ 'thumb-inactive': !item.isActive }"
+                    alt=""
+                  />
+                </div>
+                <img v-else :src="b.imageUrl" alt="" class="thumb-single" />
               </td>
-              <td><span class="font-medium">{{ b.title || '(Không tiêu đề)' }}</span></td>
+              <td>
+                <span class="font-medium">{{ b.title || '(Không tiêu đề)' }}</span>
+                <span v-if="b.position === 'CENTER' && b._groupItems" class="text-xs text-muted d-block">
+                  {{ b._groupItems.length }} ảnh
+                </span>
+              </td>
               <td><span class="badge badge-category">{{ b.position }}</span></td>
               <td class="text-muted text-sm truncate" style="max-width:200px">{{ b.linkUrl || '—' }}</td>
-              <td class="text-center font-bold">{{ b.sortOrder }}</td>
+              <td class="text-center font-bold">
+                <span v-if="b.position === 'CENTER'">—</span>
+                <span v-else>{{ b.sortOrder }}</span>
+              </td>
               <td class="text-center">
-                <span :class="['badge', resolveActive(b, false) ? 'badge-active' : 'badge-inactive']">
-                  {{ resolveActive(b, false) ? 'Đang bật' : 'Đang ẩn' }}
+                <span :class="['badge', b.isActive ? 'badge-active' : 'badge-inactive']">
+                  {{ b.isActive ? 'Đang bật' : 'Đang ẩn' }}
                 </span>
               </td>
               <td>
@@ -441,6 +486,37 @@ const confirmDelete = async () => {
 </template>
 
 <style scoped>
+/* ── Thumbnail styles ─────────────────────────────── */
+.thumb-single {
+  width: 100px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 4px;
+  display: block;
+}
+
+.thumb-group {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.thumb-group-img {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  transition: opacity 0.2s;
+}
+
+.thumb-group-img.thumb-inactive {
+  opacity: 0.35;
+  filter: grayscale(60%);
+}
+
+.d-block { display: block; }
+
 .upload-dropzone {
   border: 2px dashed #e2e8f0;
   border-radius: 12px;

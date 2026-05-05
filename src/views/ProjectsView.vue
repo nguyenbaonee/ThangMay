@@ -20,7 +20,7 @@ const articleGroups = ref({
 })
 
 const filterOptions = [
-  { value: 'PROJECT', label: 'Dự án nổi bật', heading: 'Dự án nổi bật mới nhất' },
+  { value: 'PROJECT', label: 'Dự án', heading: 'Dự án mới nhất' },
   { value: 'NEWS', label: 'Tin tức', heading: 'Tin tức mới nhất' },
   { value: 'RECRUITMENT', label: 'Tuyển dụng', heading: 'Tuyển dụng mới nhất' }
 ]
@@ -33,7 +33,7 @@ const filterDescriptions = {
 
 const fallbackCategoryName = {
   NEWS: 'Tin tức',
-  PROJECT: 'Dự án nổi bật',
+  PROJECT: 'Dự án',
   RECRUITMENT: 'Tuyển dụng'
 }
 
@@ -62,19 +62,27 @@ const selectedGroup = computed(
   () => articleGroups.value[activeFilter.value] || { featured: [], all: [] }
 )
 
+const sortedAllPosts = computed(() => {
+  const all = [...(selectedGroup.value.all || [])]
+  return all.sort((a, b) => {
+    // Sort by featured first (true comes before false)
+    if (!!a.featured !== !!b.featured) return a.featured ? -1 : 1
+    // Then sort by date descending
+    const dateA = new Date(a.publishedAt || a.createdAt || 0)
+    const dateB = new Date(b.publishedAt || b.createdAt || 0)
+    return dateB - dateA
+  })
+})
+
 const primaryPosts = computed(() => {
-  const featuredPosts = selectedGroup.value.featured || []
-  const allPosts = selectedGroup.value.all || []
-  if (featuredPosts.length > 0) return featuredPosts.slice(0, MAX_PRIMARY_POSTS)
-  return allPosts.slice(0, MAX_PRIMARY_POSTS)
+  return sortedAllPosts.value.slice(0, MAX_PRIMARY_POSTS)
 })
 
 const heroPost = computed(() => primaryPosts.value[0] || null)
 const secondaryPosts = computed(() => primaryPosts.value.slice(1, 1 + MAX_GRID_POSTS))
 
 const remainingPosts = computed(() => {
-  const shownIds = new Set(primaryPosts.value.map((post) => post.id))
-  return (selectedGroup.value.all || []).filter((post) => !shownIds.has(post.id))
+  return sortedAllPosts.value.slice(primaryPosts.value.length)
 })
 
 const visibleExtraPosts = computed(() =>

@@ -121,8 +121,8 @@ const confirmDelete = async () => {
           </tr></thead>
           <tbody>
             <tr v-if="filtered.length === 0"><td colspan="6"><div class="empty-state"><p>Chưa có danh mục nào</p></div></td></tr>
-            <tr v-for="c in filtered" :key="c.id">
-              <td class="text-center font-bold text-primary">{{ c.sortOrder }}</td>
+            <tr v-for="(c, index) in filtered" :key="c.id">
+              <td class="text-center font-bold text-primary">{{ index + 1 }}</td>
               <td class="font-medium">{{ c.name }}</td>
               <td class="text-sm font-mono text-muted">{{ c.slug || '—' }}</td>
               <td><span class="truncate">{{ c.description || '—' }}</span></td>

@@ -2,8 +2,10 @@ import axios from 'axios'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
-  timeout: 15000,
-  headers: { 'Content-Type': 'application/json' }
+  timeout: 15000
+  // Không set Content-Type mặc định ở đây.
+  // Axios sẽ tự set 'application/json' cho object/string,
+  // và 'multipart/form-data; boundary=...' cho FormData.
 })
 
 // Request interceptor — attach JWT token

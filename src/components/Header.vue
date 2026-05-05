@@ -112,7 +112,7 @@ const mobileSecondaryLinks = computed(() => navLinks.filter((link) => link.path 
     <nav class="main-nav">
       <div class="container nav-content">
         <router-link to="/" class="logo">
-          <span class="logo-text">logomishdrg</span>
+          <span class="logo-text">Misel</span>
           <span class="logo-subtext">Elevating Living</span>
         </router-link>
 
@@ -137,7 +137,7 @@ const mobileSecondaryLinks = computed(() => navLinks.filter((link) => link.path 
       <div class="mobile-menu" @click.stop>
         <div class="mobile-menu-head">
           <router-link to="/" class="mobile-brand" @click="isMenuOpen = false">
-            <span class="mobile-brand-text">logomishdrg</span>
+            <span class="mobile-brand-text">Misel</span>
             <span class="mobile-brand-subtext">Elevating Living</span>
           </router-link>
           <button class="mobile-close" @click="isMenuOpen = false" aria-label="Đóng menu">

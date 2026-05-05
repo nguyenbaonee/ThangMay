@@ -10,9 +10,9 @@ const isLoading = ref(false)
 const searchQuery = ref('')
 const blogs = ref([])
 const categories = ref([
-  { id: 'pc-news', name: 'Tin tức', slug: 'tin-tuc' },
-  { id: 'pc-project', name: 'Dự án nổi bật', slug: 'du-an-tieu-bieu' },
-  { id: 'pc-recruitment', name: 'Tuyển dụng', slug: 'tuyen-dung' }
+  { id: 'postcat-01', name: 'Tin tức', slug: 'tin-tuc', type: 'NEWS' },
+  { id: 'postcat-02', name: 'Dự án', slug: 'du-an-tieu-bieu', type: 'PROJECT' },
+  { id: 'postcat-03', name: 'Tuyển dụng', slug: 'tuyen-dung', type: 'RECRUITMENT' }
 ])
 
 const isModalOpen = ref(false)
@@ -21,7 +21,7 @@ const modalMode = ref('create')
 const targetDeleteId = ref(null)
 const saving = ref(false)
 
-const initialForm = { id: null, title: '', slug: '', categoryId: '', summary: '', content: '', thumbnailId: '', thumbnailPreview: '', status: 'DRAFT', type: 'BLOG', isFeatured: false }
+const initialForm = { id: null, title: '', slug: '', categoryId: '', summary: '', content: '', thumbnailId: '', thumbnailPreview: '', status: 'DRAFT', type: 'BLOG', featured: false }
 const form = ref({ ...initialForm })
 
 const isUploadingThumb = ref(false)
@@ -43,7 +43,6 @@ const onThumbnailSelected = async (e) => {
 }
 
 const typeOptions = [
-  { value: 'BLOG', label: 'Bài viết' },
   { value: 'NEWS', label: 'Tin tức' },
   { value: 'PROJECT', label: 'Dự án' },
   { value: 'RECRUITMENT', label: 'Tuyển dụng' }
@@ -58,16 +57,11 @@ const filteredCategories = computed(() => {
 const fetchData = async () => {
   isLoading.value = true
   try {
-    const [postRes, categoryRes] = await Promise.allSettled([
-      postApi.searchAdmin({ keyword: searchQuery.value }),
-      postApi.categories()
-    ])
-    if (postRes.status === 'fulfilled') blogs.value = postRes.value?.data?.content || postRes.value?.data || []
-    if (categoryRes.status === 'fulfilled') categories.value = categoryRes.value?.data || []
+    const postRes = await postApi.searchAdmin({ keyword: searchQuery.value })
+    blogs.value = postRes.data?.content || postRes.data || []
   } catch (error) {
     console.error('Error fetching blogs:', error)
     blogs.value = []
-    categories.value = []
   } finally { isLoading.value = false }
 }
 onMounted(fetchData)
@@ -84,7 +78,11 @@ const getTypeName = (t) => typeOptions.find(o => o.value === t)?.label || t
 const openCreate = () => { modalMode.value = 'create'; form.value = { ...initialForm }; isModalOpen.value = true }
 const openEdit = (b) => { 
   modalMode.value = 'edit'; 
-  form.value = { ...b }; 
+  form.value = { 
+    ...b,
+    categoryId: b.categoryId || b.category?.id || '',
+    featured: b.featured || false
+  }; 
   form.value.thumbnailPreview = b.thumbnail?.publicUrl || b.thumbnail?.url || (typeof b.thumbnail === 'string' ? b.thumbnail : '');
   isModalOpen.value = true 
 }
@@ -93,6 +91,13 @@ const closeModal = () => { isModalOpen.value = false }
 const saveBlog = async () => {
   if (!form.value.title) { toast.error('Vui lòng nhập Tiêu đề!'); return }
   saving.value = true
+  
+  // Auto-assign category based on type
+  if (form.value.type === 'NEWS') form.value.categoryId = 'postcat-01'
+  else if (form.value.type === 'PROJECT') form.value.categoryId = 'postcat-02'
+  else if (form.value.type === 'RECRUITMENT') form.value.categoryId = 'postcat-03'
+  else if (form.value.type === 'BLOG' && !form.value.categoryId) form.value.categoryId = 'postcat-01'
+
   try {
     if (modalMode.value === 'create') { await postApi.create(form.value); toast.success('Tạo bài viết thành công!') }
     else { await postApi.update(form.value.id, form.value); toast.success('Cập nhật thành công!') }
@@ -221,13 +226,6 @@ const confirmDelete = async () => {
                 <option v-for="t in typeOptions" :key="t.value" :value="t.value">{{ t.label }}</option>
               </select>
             </div>
-            <div class="form-group">
-              <label>Danh mục</label>
-              <select v-model="form.categoryId" class="form-control">
-                <option value="">— Chọn danh mục —</option>
-                <option v-for="c in filteredCategories" :key="c.id" :value="c.id">{{ c.name }}</option>
-              </select>
-            </div>
           </div>
 
           <div class="form-row">
@@ -246,7 +244,7 @@ const confirmDelete = async () => {
             </div>
             <div class="form-group" style="justify-content: center;">
               <label class="form-check">
-                <input type="checkbox" v-model="form.isFeatured" /> 
+                <input type="checkbox" v-model="form.featured" /> 
                 <span>Đánh dấu nổi bật</span>
               </label>
             </div>

@@ -20,25 +20,25 @@ const coreServices = [
   {
     title: 'Tư vấn & Thiết kế',
     icon: Settings,
-    image: 'https://images.unsplash.com/photo-1541819361361-b5413156942a?q=80&w=1000',
+    image: '/images/351422561890573091 (2).jpg',
     desc: 'Chúng tôi lắng nghe nhu cầu của bạn để đưa ra giải pháp thang máy tối ưu nhất về công năng và thẩm mỹ.'
   },
   {
     title: 'Cung cấp & Lắp đặt',
     icon: Construction,
-    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1000',
+    image: '/images/2820939941982689699.jpg',
     desc: 'Quy trình thi công chuyên nghiệp, đảm bảo an toàn tuyệt đối và đúng tiến độ cam kết.'
   },
   {
     title: 'Bảo trì & Sửa chữa',
     icon: ShieldCheck,
-    image: 'https://images.unsplash.com/photo-1541819361361-b5413156942a?q=80&w=1000',
+    image: '/images/351422561890573091 (1).jpg',
     desc: 'Dịch vụ hậu mãi chu đáo, hỗ trợ kỹ thuật 24/7 giúp thang máy luôn vận hành ổn định.'
   },
   {
     title: 'Nâng cấp & Cải tạo',
     icon: RefreshCw,
-    image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1000',
+    image: '/images/351422561890573091.jpg',
     desc: 'Làm mới không gian nội thất cabin và nâng cấp công nghệ cho các dòng thang máy cũ.'
   }
 ]
