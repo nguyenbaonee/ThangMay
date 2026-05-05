@@ -7,12 +7,6 @@ import { toast } from 'vue3-toastify'
 
 const isSubmitting = ref(false)
 const contacts = ref([])
-const defaultHotline = '034 598 6669'
-const normalizeHotline = (value) => {
-  const cleaned = String(value || '').replace(/\s+/g, '')
-  if (!cleaned || cleaned === '0900000000' || cleaned === '090000000') return defaultHotline
-  return value
-}
 
 onMounted(async () => {
   try {
@@ -85,7 +79,7 @@ const submitForm = async () => {
               <MapPin :size="24" class="icon" />
               <div>
                 <h3>Địa chỉ</h3>
-                <p><strong>Trụ sở chính:</strong> {{ getVal('address') || 'Số 12 Hẻm 35/7/1 Tu Hoàng, P. Xuân Phương, Hà Nội' }}</p>
+                <p><strong>Trụ sở chính:</strong> {{ getVal('address') }}</p>
                 <p v-if="getVal('address_2')"><strong>Chi nhánh 2:</strong> {{ getVal('address_2') }}</p>
               </div>
             </div>
@@ -93,14 +87,14 @@ const submitForm = async () => {
               <Phone :size="24" class="icon" />
               <div>
                 <h3>Hotline 24/7</h3>
-                <p>Hotline: {{ normalizeHotline(getVal('hotline')) }}</p>
+                <p>Hotline: {{ getVal('hotline') }}</p>
               </div>
             </div>
             <div class="info-card glass">
               <Mail :size="24" class="icon" />
               <div>
                 <h3>Email</h3>
-                <p>{{ getVal('email') || 'info@thangmaymisel.com' }}</p>
+                <p>{{ getVal('email') }}</p>
               </div>
             </div>
           </div>
@@ -108,10 +102,10 @@ const submitForm = async () => {
           <div class="social-connect mt-5">
             <h3>Theo dõi chúng tôi</h3>
             <div class="social-btns">
-              <a :href="getVal('facebook_url') || 'https://web.facebook.com/thangmaymisel'" target="_blank" class="social-btn fb"><Facebook :size="20" /></a>
+              <a :href="getVal('facebook_url') || '#'" target="_blank" class="social-btn fb"><Facebook :size="20" /></a>
               <a :href="getVal('instagram_url') || '#'" target="_blank" class="social-btn ig"><Instagram :size="20" /></a>
               <a :href="getVal('linkedin_url') || '#'" target="_blank" class="social-btn li"><Linkedin :size="20" /></a>
-              <a :href="getVal('zalo_url') || 'https://zalo.me/0345986669'" target="_blank" class="social-btn zalo">
+              <a :href="getVal('zalo_url') || '#'" target="_blank" class="social-btn zalo">
                 <img src="/images.png" alt="Zalo" style="width: 24px; height: 24px; object-fit: contain;" />
               </a>
             </div>

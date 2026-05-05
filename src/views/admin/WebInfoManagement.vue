@@ -83,16 +83,6 @@ const iconMap = {
                 <h4><Globe :size="18" /> Thông tin nhận diện & Liên hệ</h4>
             </div>
 
-            <div class="form-group">
-                <label><ImageIcon :size="14" /> URL Logo Trang web</label>
-                <div style="display:flex; gap:1rem; align-items: flex-start">
-                    <input :value="getVal('website_logo')" @input="e => setVal('website_logo', e.target.value)" class="form-control" style="flex:1" placeholder="https://..." />
-                    <div v-if="getVal('website_logo')" class="logo-preview">
-                        <img :src="getVal('website_logo')" alt="Logo Preview" style="max-height:40px; object-fit:contain" />
-                    </div>
-                </div>
-            </div>
-            
             <div class="form-row">
                 <div class="form-group flex-1">
                     <label><Phone :size="14" /> Số điện thoại / Hotline</label>
@@ -107,6 +97,17 @@ const iconMap = {
             <div class="form-group">
                 <label>Địa chỉ trụ sở</label>
                 <input :value="getVal('address')" @input="e => setVal('address', e.target.value)" class="form-control" placeholder="Số nhà, Tên đường, Quận, TP..." />
+            </div>
+
+            <div class="form-row">
+                <div class="form-group flex-1">
+                    <label>Tên công ty (Hiển thị ở Footer)</label>
+                    <input :value="getVal('company_name')" @input="e => setVal('company_name', e.target.value)" class="form-control" placeholder="CÔNG TY CỔ PHẦN..." />
+                </div>
+                <div class="form-group flex-1">
+                    <label>Mã số thuế (MST)</label>
+                    <input :value="getVal('mst')" @input="e => setVal('mst', e.target.value)" class="form-control" placeholder="0123456789..." />
+                </div>
             </div>
 
             <div class="section-title mt-4">

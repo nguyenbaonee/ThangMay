@@ -51,14 +51,6 @@ onUnmounted(() => {
 })
 
 const getVal = (key) => contacts.value.find(c => c.configKey === key)?.configValue || ''
-const defaultHotline = '034 598 6669'
-const defaultHotlineTel = '0345986669'
-const normalizeHotline = (value) => {
-  const cleaned = String(value || '').replace(/\s+/g, '')
-  if (!cleaned || cleaned === '0900000000' || cleaned === '090000000') return defaultHotline
-  return value
-}
-const resolveHotlineTel = (value) => String(normalizeHotline(value)).replace(/\s+/g, '')
 
 const navLinks = [
   { name: 'Trang chủ', path: '/', icon: House },
@@ -92,17 +84,17 @@ const mobileSecondaryLinks = computed(() => navLinks.filter((link) => link.path 
     <div v-show="!isScrolled" class="top-bar">
       <div class="container top-bar-content">
         <div class="info-group">
-          <a :href="'tel:' + resolveHotlineTel(getVal('hotline'))" class="info-item">
+          <a :href="'tel:' + getVal('hotline').replace(/\s+/g, '')" class="info-item">
             <Phone :size="14" />
-            <span>{{ normalizeHotline(getVal('hotline')) }}</span>
+            <span>{{ getVal('hotline') }}</span>
           </a>
           <a :href="'mailto:' + getVal('email')" class="info-item">
             <Mail :size="14" />
-            <span>{{ getVal('email') || 'info@thangmaymisel.com' }}</span>
+            <span>{{ getVal('email') }}</span>
           </a>
         </div>
         <div class="social-links">
-          <a :href="getVal('facebook_url') || 'https://web.facebook.com/thangmaymisel/?_rdc=1&_rdr#'" target="_blank"><Facebook :size="14" /></a>
+          <a :href="getVal('facebook_url') || '#'" target="_blank"><Facebook :size="14" /></a>
           <a :href="getVal('instagram_url') || '#'" target="_blank"><Instagram :size="14" /></a>
         </div>
       </div>
@@ -171,19 +163,19 @@ const mobileSecondaryLinks = computed(() => navLinks.filter((link) => link.path 
           </router-link>
 
           <div class="mobile-socials">
-            <a :href="getVal('facebook_url') || 'https://web.facebook.com/thangmaymisel/?_rdc=1&_rdr#'" target="_blank" rel="noreferrer">
+            <a :href="getVal('facebook_url') || '#'" target="_blank" rel="noreferrer">
               <Facebook :size="20" />
             </a>
             <a :href="getVal('instagram_url') || '#'" target="_blank" rel="noreferrer">
               <Instagram :size="20" />
             </a>
-            <a :href="getVal('zalo_url') || 'https://zalo.me/0345986669'" target="_blank" rel="noreferrer" class="zalo-link">
+            <a :href="getVal('zalo_url') || '#'" target="_blank" rel="noreferrer" class="zalo-link">
               <img src="/images.png" alt="Zalo" />
             </a>
           </div>
 
-          <a :href="'tel:' + resolveHotlineTel(getVal('hotline'))" class="mobile-hotline">
-            Hotline: {{ normalizeHotline(getVal('hotline')) }}
+          <a :href="'tel:' + getVal('hotline').replace(/\s+/g, '')" class="mobile-hotline">
+            Hotline: {{ getVal('hotline') }}
           </a>
         </div>
       </div>

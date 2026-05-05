@@ -5,21 +5,11 @@ import companyContactApi from '@/api/companyContactApi'
 
 const contacts = ref([])
 
-const defaultHotline = '034 598 6669'
-const defaultHotlineTel = '0345986669'
-const defaultZaloUrl = 'https://zalo.me/0345986669'
-
 const getVal = (key) => contacts.value.find((item) => item.configKey === key)?.configValue || ''
 
-const normalizeHotline = (value) => {
-  const cleaned = String(value || '').replace(/\s+/g, '')
-  if (!cleaned || cleaned === '0900000000' || cleaned === '090000000') return defaultHotline
-  return value
-}
-
-const hotlineLabel = computed(() => normalizeHotline(getVal('hotline')))
-const hotlineHref = computed(() => `tel:${String(hotlineLabel.value).replace(/\s+/g, '') || defaultHotlineTel}`)
-const zaloHref = computed(() => getVal('zalo_url') || defaultZaloUrl)
+const hotlineLabel = computed(() => getVal('hotline'))
+const hotlineHref = computed(() => `tel:${String(hotlineLabel.value).replace(/\s+/g, '')}`)
+const zaloHref = computed(() => getVal('zalo_url'))
 
 const fetchContacts = async () => {
   try {

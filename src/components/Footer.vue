@@ -70,7 +70,7 @@ const normalizeHotline = (value) => {
           <ul class="contact-info">
             <li>
               <MapPin :size="20" class="icon" />
-              <span>{{ getVal('address') || 'Số 12 Hẻm 35/7/1 Tu Hoàng, P. Xuân Phương, Hà Nội' }}</span>
+              <span>{{ getVal('address') }}</span>
             </li>
             <li v-if="getVal('address_2')">
               <MapPin :size="20" class="icon" />
@@ -78,11 +78,11 @@ const normalizeHotline = (value) => {
             </li>
             <li>
               <Phone :size="20" class="icon" />
-               <span>{{ normalizeHotline(getVal('hotline')) }}</span>
+               <span>{{ getVal('hotline') }}</span>
             </li>
             <li>
               <Mail :size="20" class="icon" />
-              <span>{{ getVal('email') || 'info@thangmaymisel.com' }}</span>
+              <span>{{ getVal('email') }}</span>
             </li>
           </ul>
           <div class="newsletter">
@@ -98,7 +98,7 @@ const normalizeHotline = (value) => {
       <div class="container bottom-content">
         <div class="copyright-info">
           <p>&copy; 2024 Misel ELEVATOR. All rights reserved.</p>
-          <p class="company-info">Công Ty Cổ Phần MISHD GROUP &nbsp;&nbsp; MST: 0111277832</p>
+          <p class="company-info">{{ getVal('company_name') }} &nbsp;&nbsp; MST: {{ getVal('mst') }}</p>
         </div>
         <div class="bottom-links">
           <a href="#">Điều khoản sử dụng</a>

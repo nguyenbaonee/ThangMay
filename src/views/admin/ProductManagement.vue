@@ -20,10 +20,12 @@ const saving = ref(false)
 
 const initialForm = {
   id: null, name: '', categoryId: '', price: '', summary: '', desc: '',
-  thumbnailId: '', thumbnailPreview: '', imageIds: '', features: [''], specs: [{ label: '', value: '' }],
+  thumbnailId: '', thumbnailPreview: '', imageIds: '', 
+  galleryPreviews: [], // Added for UI preview
+  features: [''], specs: [{ label: '', value: '' }],
   isActive: true, isFeatured: false
 }
-const form = ref({ ...initialForm, features: [''], specs: [{ label: '', value: '' }] })
+const form = ref({ ...initialForm, features: [''], specs: [{ label: '', value: '' }], galleryPreviews: [] })
 
 const isUploadingThumb = ref(false)
 const isUploadingGallery = ref(false)
@@ -41,7 +43,13 @@ const onThumbnailSelected = async (e) => {
     toast.error('Lỗi upload ảnh!')
   } finally {
     isUploadingThumb.value = false
+    e.target.value = '' // Reset input
   }
+}
+
+const removeThumbnail = () => {
+  form.value.thumbnailId = ''
+  form.value.thumbnailPreview = ''
 }
 
 const onGallerySelected = async (e) => {
@@ -50,18 +58,29 @@ const onGallerySelected = async (e) => {
   isUploadingGallery.value = true
   try {
     const res = await mediaApi.uploadMultiple(files, 'products')
-    const ids = res.data.map(item => item.id).join(';')
-    if (form.value.imageIds) {
-      form.value.imageIds += ';' + ids
-    } else {
-      form.value.imageIds = ids
-    }
+    const newItems = res.data.map(item => ({
+      id: item.id,
+      url: item.publicUrl || item.url
+    }))
+    
+    form.value.galleryPreviews = [...form.value.galleryPreviews, ...newItems]
+    syncGalleryIds()
     toast.success('Upload gallery thành công!')
   } catch (err) {
     toast.error('Lỗi upload gallery!')
   } finally {
     isUploadingGallery.value = false
+    e.target.value = '' // Reset input
   }
+}
+
+const removeGalleryImage = (index) => {
+  form.value.galleryPreviews.splice(index, 1)
+  syncGalleryIds()
+}
+
+const syncGalleryIds = () => {
+  form.value.imageIds = form.value.galleryPreviews.map(img => img.id).join(';')
 }
 
 // ── Data Fetching ───
@@ -98,12 +117,24 @@ const getCategoryName = (p) => {
 const openCreate = () => {
   modalMode.value = 'create'
   form.value = JSON.parse(JSON.stringify(initialForm))
+  form.value.galleryPreviews = []
   isModalOpen.value = true
 }
 const openEdit = (p) => {
   modalMode.value = 'edit'
   form.value = JSON.parse(JSON.stringify(p))
   form.value.thumbnailPreview = p.thumbnail?.publicUrl || p.thumbnail?.url || (typeof p.thumbnail === 'string' ? p.thumbnail : '')
+  
+  // Map existing images to galleryPreviews
+  if (p.images && Array.isArray(p.images)) {
+    form.value.galleryPreviews = p.images.map(img => ({
+      id: img.id,
+      url: img.publicUrl || img.url
+    }))
+  } else {
+    form.value.galleryPreviews = []
+  }
+
   if (!form.value.features?.length) form.value.features = ['']
   if (!form.value.specs?.length) form.value.specs = [{ label: '', value: '' }]
   isModalOpen.value = true
@@ -202,7 +233,7 @@ const removeSpec = (i) => { if (form.value.specs.length > 1) form.value.specs.sp
             </tr>
             <tr v-for="p in filteredProducts" :key="p.id">
               <td>
-                <img v-if="p.thumbnail?.publicUrl || p.thumbnail?.url || p.thumbnail" :src="p.thumbnail?.publicUrl || p.thumbnail?.url || p.thumbnail" class="thumb-sm" alt="" />
+                <img v-if="p.thumbnail?.publicUrl || p.thumbnail?.url || (typeof p.thumbnail === 'string' && p.thumbnail)" :src="p.thumbnail?.publicUrl || p.thumbnail?.url || (typeof p.thumbnail === 'string' ? p.thumbnail : '')" class="thumb-sm" alt="" />
                 <div v-else class="thumb-sm" style="display:flex;align-items:center;justify-content:center;color:#94a3b8;font-size:0.7rem">N/A</div>
               </td>
               <td><span class="font-medium">{{ p.name }}</span></td>
@@ -273,19 +304,41 @@ const removeSpec = (i) => { if (form.value.specs.length > 1) form.value.specs.sp
             <label>Mô tả chi tiết</label>
             <textarea v-model="form.desc" class="form-control" rows="4" placeholder="Nội dung chi tiết sản phẩm..."></textarea>
           </div>
-          <!-- Thumbnail -->
-          <div class="form-row">
+          <!-- Thumbnail & Gallery Previews -->
+          <div class="form-row image-section">
+            <!-- Thumbnail -->
             <div class="form-group">
               <label>Ảnh đại diện (Thumbnail)</label>
-              <input type="file" accept="image/*" @change="onThumbnailSelected" :disabled="isUploadingThumb" class="form-control" />
-              <div v-if="isUploadingThumb" class="text-sm text-primary" style="margin-top:4px">Đang tải ảnh lên...</div>
-              <img v-if="form.thumbnailPreview" :src="form.thumbnailPreview" style="height: 60px; object-fit: contain; margin-top: 8px; border-radius: 4px; background: #f8fafc;" />
+              <div class="upload-box">
+                <input type="file" accept="image/*" @change="onThumbnailSelected" :disabled="isUploadingThumb" class="hidden-input" id="thumbInput" />
+                <label for="thumbInput" class="upload-label" v-if="!form.thumbnailPreview">
+                  <PlusCircle :size="20" />
+                  <span>Chọn ảnh</span>
+                </label>
+                <div v-else class="preview-container">
+                  <img :src="form.thumbnailPreview" class="preview-img" />
+                  <button class="remove-btn" @click="removeThumbnail"><X :size="14" /></button>
+                </div>
+              </div>
+              <div v-if="isUploadingThumb" class="upload-status">Đang tải lên...</div>
             </div>
+
+            <!-- Gallery -->
             <div class="form-group">
               <label>Nhiều ảnh tải lên (Gallery)</label>
-              <input type="file" accept="image/*" multiple @change="onGallerySelected" :disabled="isUploadingGallery" class="form-control" />
-              <div v-if="isUploadingGallery" class="text-sm text-primary" style="margin-top:4px">Đang tải ảnh lên...</div>
-              <div style="margin-top:4px; font-size:0.85rem; color:#64748b; word-break: break-all;" v-if="form.imageIds">Image IDs: {{ form.imageIds }}</div>
+              <div class="gallery-grid">
+                <div v-for="(img, idx) in form.galleryPreviews" :key="img.id" class="preview-container">
+                  <img :src="img.url" class="preview-img" />
+                  <button class="remove-btn" @click="removeGalleryImage(idx)"><X :size="14" /></button>
+                </div>
+                <div class="upload-box mini">
+                  <input type="file" accept="image/*" multiple @change="onGallerySelected" :disabled="isUploadingGallery" class="hidden-input" id="galleryInput" />
+                  <label for="galleryInput" class="upload-label mini">
+                    <Plus :size="20" />
+                  </label>
+                </div>
+              </div>
+              <div v-if="isUploadingGallery" class="upload-status">Đang tải lên...</div>
             </div>
           </div>
           <!-- Features -->
@@ -335,3 +388,110 @@ const removeSpec = (i) => { if (form.value.specs.length > 1) form.value.specs.sp
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Image Section Styling */
+.image-section {
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 1rem;
+}
+
+.upload-box {
+  position: relative;
+  border: 2px dashed #cbd5e1;
+  border-radius: 8px;
+  background: white;
+  transition: all 0.2s;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-box:hover {
+  border-color: #3b82f6;
+  background: #f0f7ff;
+}
+
+.hidden-input {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.upload-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.upload-label span {
+  font-size: 0.85rem;
+}
+
+.preview-container {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.preview-container:hover .remove-btn {
+  opacity: 1;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.upload-box.mini {
+  min-height: 100px;
+}
+
+.upload-label.mini {
+  padding: 0;
+}
+
+.upload-status {
+  font-size: 0.75rem;
+  color: #3b82f6;
+  margin-top: 4px;
+}
+</style>
