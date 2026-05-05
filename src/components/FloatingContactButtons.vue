@@ -8,7 +8,7 @@ const contacts = ref([])
 const getVal = (key) => contacts.value.find((item) => item.configKey === key)?.configValue || ''
 
 const hotlineLabel = computed(() => getVal('hotline'))
-const hotlineHref = computed(() => `tel:${String(hotlineLabel.value).replace(/\s+/g, '')}`)
+const hotlineHref = computed(() => `tel:${String(hotlineLabel.value || '').replace(/\s+/g, '')}`)
 const zaloHref = computed(() => getVal('zalo_url'))
 
 const fetchContacts = async () => {

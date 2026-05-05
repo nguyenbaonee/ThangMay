@@ -84,7 +84,7 @@ const mobileSecondaryLinks = computed(() => navLinks.filter((link) => link.path 
     <div v-show="!isScrolled" class="top-bar">
       <div class="container top-bar-content">
         <div class="info-group">
-          <a :href="'tel:' + getVal('hotline').replace(/\s+/g, '')" class="info-item">
+          <a :href="'tel:' + (getVal('hotline') || '').replace(/\s+/g, '')" class="info-item">
             <Phone :size="14" />
             <span>{{ getVal('hotline') }}</span>
           </a>
@@ -174,7 +174,7 @@ const mobileSecondaryLinks = computed(() => navLinks.filter((link) => link.path 
             </a>
           </div>
 
-          <a :href="'tel:' + getVal('hotline').replace(/\s+/g, '')" class="mobile-hotline">
+          <a :href="'tel:' + (getVal('hotline') || '').replace(/\s+/g, '')" class="mobile-hotline">
             Hotline: {{ getVal('hotline') }}
           </a>
         </div>
