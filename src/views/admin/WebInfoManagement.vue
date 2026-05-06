@@ -30,6 +30,16 @@ const setVal = (key, val) => {
 }
 
 const saveInfo = async () => {
+    // Validate required fields
+    const requiredKeys = ['hotline', 'email', 'address', 'company_name', 'mst', 'facebook_url', 'instagram_url', 'zalo_url', 'map_embed_url']
+    for (const key of requiredKeys) {
+        const val = getVal(key)
+        if (!val || val.trim() === '') {
+            toast.warning(`Vui lòng nhập đầy đủ tất cả các trường thông tin!`)
+            return
+        }
+    }
+
     saving.value = true
     try {
         const results = await Promise.all(contacts.value.map(c => 
@@ -85,27 +95,27 @@ const iconMap = {
 
             <div class="form-row">
                 <div class="form-group flex-1">
-                    <label><Phone :size="14" /> Số điện thoại / Hotline</label>
+                    <label><Phone :size="14" /> Số điện thoại / Hotline <span class="required">*</span></label>
                     <input :value="getVal('hotline')" @input="e => setVal('hotline', e.target.value)" class="form-control" placeholder="0xxx..." />
                 </div>
                 <div class="form-group flex-1">
-                    <label><Mail :size="14" /> Email liên hệ</label>
+                    <label><Mail :size="14" /> Email liên hệ <span class="required">*</span></label>
                     <input :value="getVal('email')" @input="e => setVal('email', e.target.value)" class="form-control" placeholder="contact@..." />
                 </div>
             </div>
 
             <div class="form-group">
-                <label>Địa chỉ trụ sở</label>
+                <label>Địa chỉ trụ sở <span class="required">*</span></label>
                 <input :value="getVal('address')" @input="e => setVal('address', e.target.value)" class="form-control" placeholder="Số nhà, Tên đường, Quận, TP..." />
             </div>
 
             <div class="form-row">
                 <div class="form-group flex-1">
-                    <label>Tên công ty (Hiển thị ở Footer)</label>
+                    <label>Tên công ty (Hiển thị ở Footer) <span class="required">*</span></label>
                     <input :value="getVal('company_name')" @input="e => setVal('company_name', e.target.value)" class="form-control" placeholder="CÔNG TY CỔ PHẦN..." />
                 </div>
                 <div class="form-group flex-1">
-                    <label>Mã số thuế (MST)</label>
+                    <label>Mã số thuế (MST) <span class="required">*</span></label>
                     <input :value="getVal('mst')" @input="e => setVal('mst', e.target.value)" class="form-control" placeholder="0123456789..." />
                 </div>
             </div>
@@ -115,22 +125,22 @@ const iconMap = {
             </div>
 
             <div class="form-group">
-                <label><Facebook :size="14" /> Facebook URL</label>
+                <label><Facebook :size="14" /> Facebook URL <span class="required">*</span></label>
                 <input :value="getVal('facebook_url')" @input="e => setVal('facebook_url', e.target.value)" class="form-control" placeholder="https://facebook.com/..." />
             </div>
 
             <div class="form-group">
-                <label><Instagram :size="14" /> Instagram URL</label>
+                <label><Instagram :size="14" /> Instagram URL <span class="required">*</span></label>
                 <input :value="getVal('instagram_url')" @input="e => setVal('instagram_url', e.target.value)" class="form-control" placeholder="https://instagram.com/..." />
             </div>
 
             <div class="form-group">
-                <label><ExternalLink :size="14" /> Zalo Link / Số Zalo</label>
+                <label><ExternalLink :size="14" /> Zalo Link / Số Zalo <span class="required">*</span></label>
                 <input :value="getVal('zalo_url')" @input="e => setVal('zalo_url', e.target.value)" class="form-control" placeholder="https://zalo.me/..." />
             </div>
 
             <div class="form-group">
-                <label>Google Maps Embed URL</label>
+                <label>Google Maps Embed URL <span class="required">*</span></label>
                 <textarea :value="getVal('map_embed_url')" @input="e => setVal('map_embed_url', e.target.value)" class="form-control" rows="3" placeholder="iframe code hoặc URL map..."></textarea>
             </div>
         </div>
@@ -185,6 +195,11 @@ const iconMap = {
     display: flex; align-items: center; gap: 0.4rem;
     margin-bottom: 0.45rem;
     font-size: 0.95rem;
+}
+
+.required {
+    color: #ef4444;
+    margin-left: 2px;
 }
 
 .form-control {
