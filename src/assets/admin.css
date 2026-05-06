@@ -1,6 +1,17 @@
-/* ═══════════════════════════════════════════════════════════ */
-/*  ADMIN DESIGN SYSTEM — Premium, Responsive, Professional  */
-/* ═══════════════════════════════════════════════════════════ */
+/* Fix giant icon bug */
+svg { vertical-align: middle; max-width: 100%; }
+.lucide { width: 1em; height: 1em; display: inline-block; }
+
+/* Fix giant Toastify icons */
+.Toastify__toast-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.Toastify__toast-icon svg {
+  width: 20px !important;
+  height: 20px !important;
+}
 
 :root {
   --admin-primary: #4f46e5;

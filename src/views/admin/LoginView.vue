@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Lock, User, Loader2, Eye, EyeOff } from 'lucide-vue-next'
+import { Lock, User, Loader2, Eye, EyeOff, AlertTriangle } from 'lucide-vue-next'
 import { toast } from 'vue3-toastify'
 import authApi from '@/api/authApi'
 
@@ -13,6 +13,9 @@ const form = ref({
   username: '',
   password: ''
 })
+
+const showErrorModal = ref(false)
+const errorMessage = ref('')
 
 const handleLogin = async () => {
   if (!form.value.username || !form.value.password) {
@@ -33,7 +36,8 @@ const handleLogin = async () => {
     router.push('/admin')
   } catch (error) {
     console.error('Login error:', error)
-    toast.error(error.message || 'Tài khoản hoặc mật khẩu không chính xác')
+    errorMessage.value = error.message || 'Tài khoản hoặc mật khẩu không chính xác'
+    showErrorModal.value = true
   } finally {
     isLoading.value = false
   }
@@ -92,6 +96,20 @@ const handleLogin = async () => {
         <router-link to="/">← Quay lại trang chủ</router-link>
       </div>
     </div>
+
+    <!-- Error Modal -->
+    <Transition name="fade">
+      <div v-if="showErrorModal" class="error-modal-overlay" @click="showErrorModal = false">
+        <div class="error-modal" @click.stop>
+          <div class="error-icon">
+            <AlertTriangle :size="48" />
+          </div>
+          <h3>Đăng nhập thất bại</h3>
+          <p>{{ errorMessage }}</p>
+          <button class="btn-close-modal" @click="showErrorModal = false">Tôi đã hiểu</button>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -104,6 +122,8 @@ const handleLogin = async () => {
   background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
   padding: 1.5rem;
   font-family: 'Inter', sans-serif;
+  overflow: hidden;
+  position: relative;
 }
 
 .login-card {
@@ -248,5 +268,83 @@ const handleLogin = async () => {
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Error Modal Styles */
+.error-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.error-modal {
+  background: white;
+  width: 100%;
+  max-width: 400px;
+  border-radius: 24px;
+  padding: 2.5rem;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.error-icon {
+  width: 80px;
+  height: 80px;
+  background: #fee2e2;
+  color: #ef4444;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.5rem;
+}
+
+.error-modal h3 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 0.75rem;
+}
+
+.error-modal p {
+  color: #64748b;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.btn-close-modal {
+  width: 100%;
+  padding: 0.85rem;
+  background: #1e293b;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-close-modal:hover {
+  background: #0f172a;
+  transform: translateY(-2px);
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
 }
 </style>
