@@ -44,20 +44,13 @@ const resolveActive = (value, fallback = true) => {
 }
 
 const toggleSlotStatus = (index) => {
-  const slot = centerSlots.value[index]
-  if (!slot.imageUrl) {
-    slot.isActive = !slot.isActive
+  // Anh dau tien (index 0) luon phai bat
+  if (index === 0) {
+    toast.info('Ảnh đầu tiên luôn được giữ hoạt động để đảm bảo hiển thị.')
     return
   }
-  
-  if (slot.isActive) {
-    // Count other active slots that have images
-    const activeWithImageCount = centerSlots.value.filter((s, i) => i !== index && s.imageUrl && s.isActive).length
-    if (activeWithImageCount === 0) {
-      toast.warning('Phải giữ ít nhất 1 ảnh hoạt động!')
-      return
-    }
-  }
+
+  const slot = centerSlots.value[index]
   slot.isActive = !slot.isActive
 }
 
@@ -496,16 +489,17 @@ const toggleBannerStatus = async (banner) => {
                   <input
                     v-model.number="slot.sortOrder"
                     type="number"
-                    min="1"
                     class="form-control sm"
                     placeholder="Vị trí"
                     title="Vị trí hiển thị"
+                    disabled
                   />
                   <button 
                     type="button" 
                     class="status-toggle" 
-                    :class="{ active: slot.isActive }"
+                    :class="{ active: slot.isActive, disabled: index === 0 }" 
                     @click="toggleSlotStatus(index)"
+                    :title="index === 0 ? 'Bắt buộc hoạt động' : ''"
                   >
                     {{ slot.isActive ? 'Bật' : 'Ẩn' }}
                   </button>
@@ -773,6 +767,13 @@ const toggleBannerStatus = async (banner) => {
   background: #ecfdf5;
   color: #059669;
   border-color: #10b981;
+}
+.status-toggle.disabled {
+  cursor: not-allowed;
+  opacity: 0.8;
+  background: #f1f5f9;
+  color: #94a3b8;
+  border-color: #e2e8f0;
 }
 
 .badge-toggle-btn {
