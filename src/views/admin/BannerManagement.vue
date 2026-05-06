@@ -122,10 +122,13 @@ const groupedBanners = computed(() => {
         ...b,
         _groupItems: groupItems,
         // Status: active nếu có ít nhất 1 item active
-        isActive: groupItems.some(x => x.isActive)
+        isActive: groupItems.some(x => resolveActive(x))
       })
     } else {
-      result.push(b)
+      result.push({
+        ...b,
+        isActive: resolveActive(b)
+      })
     }
   }
   return result
@@ -263,6 +266,49 @@ const confirmDelete = async () => {
   try { await bannerApi.delete(targetDeleteId.value); toast.success('Đã xoá banner!') } catch { toast.error('Lỗi khi xoá') }
   isConfirmOpen.value = false; fetchData()
 }
+
+const toggleBannerStatus = async (banner) => {
+  if (saving.value) return
+  
+  // Logic toggle for CENTER position: if current is active, check if other active ones exist
+  if (banner.position === 'CENTER' && banner.isActive) {
+    const activeGroups = groupedBanners.value.filter(b => b.position === 'CENTER' && b.isActive && b.groupCode !== banner.groupCode).length
+    if (activeGroups === 0) {
+      toast.warning('Phải giữ ít nhất 1 bộ banner trang chủ hoạt động!')
+      return
+    }
+  }
+
+  saving.value = true
+  try {
+    const newStatus = !banner.isActive
+    const payload = {
+      title: banner.title,
+      imageUrl: banner.imageUrl,
+      linkUrl: banner.linkUrl,
+      position: banner.position,
+      sortOrder: banner.sortOrder,
+      isActive: newStatus
+    }
+    
+    // For CENTER group, we need to update items
+    if (banner.position === 'CENTER' && banner._groupItems) {
+      payload.items = banner._groupItems.map(item => ({
+        imageUrl: item.imageUrl,
+        sortOrder: item.sortOrder,
+        isActive: newStatus // toggle whole group
+      }))
+    }
+
+    await bannerApi.update(banner.id, payload)
+    toast.success(`Đã ${newStatus ? 'bật' : 'ẩn'} banner thành công`)
+    await fetchData()
+  } catch (error) {
+    toast.error('Lỗi khi cập nhật trạng thái')
+  } finally {
+    saving.value = false
+  }
+}
 </script>
 
 <template>
@@ -329,9 +375,15 @@ const confirmDelete = async () => {
                 <span v-else>{{ b.sortOrder }}</span>
               </td>
               <td class="text-center">
-                <span :class="['badge', b.isActive ? 'badge-active' : 'badge-inactive']">
+                <button 
+                  class="badge-toggle-btn"
+                  :class="['badge', b.isActive ? 'badge-active' : 'badge-inactive']"
+                  @click="toggleBannerStatus(b)"
+                  :disabled="saving"
+                  :title="b.isActive ? 'Nhấn để ẩn' : 'Nhấn để bật'"
+                >
                   {{ b.isActive ? 'Đang bật' : 'Đang ẩn' }}
-                </span>
+                </button>
               </td>
               <td>
                 <div class="row-actions">
@@ -719,6 +771,30 @@ const confirmDelete = async () => {
   background: #ecfdf5;
   color: #059669;
   border-color: #10b981;
+}
+
+.badge-toggle-btn {
+  border: none;
+  cursor: pointer;
+  padding: 0.4rem 0.8rem;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.badge-toggle-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.badge-toggle-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 @media (max-width: 640px) {
