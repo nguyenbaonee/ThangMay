@@ -272,7 +272,7 @@ const toggleBannerStatus = async (banner) => {
   
   // Logic toggle for CENTER position: if current is active, check if other active ones exist
   if (banner.position === 'CENTER' && banner.isActive) {
-    const activeGroups = groupedBanners.value.filter(b => b.position === 'CENTER' && b.isActive && b.groupCode !== banner.groupCode).length
+    const activeGroups = groupedBanners.value.filter(b => b.position === 'CENTER' && b.isActive && (b.groupCode !== banner.groupCode && b.id !== banner.id)).length
     if (activeGroups === 0) {
       toast.warning('Phải giữ ít nhất 1 bộ banner trang chủ hoạt động!')
       return
@@ -282,21 +282,22 @@ const toggleBannerStatus = async (banner) => {
   saving.value = true
   try {
     const newStatus = !banner.isActive
+    // Toi uu hoa payload gui len
     const payload = {
-      title: banner.title,
-      imageUrl: banner.imageUrl,
-      linkUrl: banner.linkUrl,
+      title: banner.title || '',
+      imageUrl: banner.imageUrl || '',
+      linkUrl: banner.linkUrl || '',
       position: banner.position,
-      sortOrder: banner.sortOrder,
+      sortOrder: banner.sortOrder || 0,
       isActive: newStatus
     }
     
-    // For CENTER group, we need to update items
+    // Neu la CENTER group, phai gui kem danh sach items
     if (banner.position === 'CENTER' && banner._groupItems) {
       payload.items = banner._groupItems.map(item => ({
         imageUrl: item.imageUrl,
         sortOrder: item.sortOrder,
-        isActive: newStatus // toggle whole group
+        isActive: newStatus 
       }))
     }
 
@@ -304,6 +305,7 @@ const toggleBannerStatus = async (banner) => {
     toast.success(`Đã ${newStatus ? 'bật' : 'ẩn'} banner thành công`)
     await fetchData()
   } catch (error) {
+    console.error('Toggle error:', error)
     toast.error('Lỗi khi cập nhật trạng thái')
   } finally {
     saving.value = false
@@ -356,7 +358,7 @@ const toggleBannerStatus = async (banner) => {
                     :src="item.imageUrl"
                     :title="`Ảnh ${item.sortOrder}`"
                     class="thumb-group-img"
-                    :class="{ 'thumb-inactive': !item.isActive }"
+                    :class="{ 'thumb-inactive': !resolveActive(item) }"
                     alt=""
                   />
                 </div>
