@@ -42,7 +42,15 @@ const filtered = computed(() => {
   return documents.value.filter(d => d.title?.toLowerCase().includes(q))
 })
 
-const getCatName = (d) => d.category || docCategories.value.find(c => c.id === d.categoryId)?.name || '—'
+const getCatName = (d) => {
+  if (typeof d.category === 'string') return d.category
+  return d.category?.name || docCategories.value.find(c => c.id === d.categoryId)?.name || '—'
+}
+
+const truncateText = (value, maxLength = 150) => {
+  const text = String(value || '')
+  return text.length > maxLength ? `${text.slice(0, maxLength)}...` : text
+}
 
 const openCreate = () => { modalMode.value = 'create'; form.value = { ...initialForm }; isModalOpen.value = true }
 const openEdit = (d) => { modalMode.value = 'edit'; form.value = { ...d }; isModalOpen.value = true }
@@ -94,7 +102,11 @@ const confirmDelete = async () => {
             <tr v-if="filtered.length === 0"><td colspan="6"><div class="empty-state"><p>Chưa có tài liệu nào</p></div></td></tr>
             <tr v-for="d in filtered" :key="d.id">
               <td><span class="font-medium">{{ d.title }}</span><br/><span class="text-xs text-muted">{{ d.description?.substring(0, 50) }}</span></td>
-              <td><span class="badge badge-category">{{ getCatName(d) }}</span></td>
+              <td>
+                <span class="badge badge-category" :title="getCatName(d)">
+                  {{ truncateText(getCatName(d), 150) }}
+                </span>
+              </td>
               <td><a :href="d.driveUrl" target="_blank" class="text-primary text-sm" style="text-decoration:underline">{{ d.driveUrl?.substring(0, 35) }}...</a></td>
               <td class="text-center text-sm text-muted font-bold">{{ d.downloadCount || 0 }}</td>
               <td class="text-center">
