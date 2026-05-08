@@ -2,6 +2,7 @@
 import { MapPin, Phone, Mail, Facebook, Instagram, Linkedin, Send } from 'lucide-vue-next'
 import { ref, onMounted } from 'vue'
 import companyContactApi from '@/api/companyContactApi'
+import boCongThuongBadge from '@/assets/3489986152055590664.jpg'
 
 const contacts = ref([])
 onMounted(async () => {
@@ -90,6 +91,9 @@ const normalizeHotline = (value) => {
             <button class="newsletter-btn"><Send :size="16" /></button>
           </div>
         </div>
+      </div>
+      <div class="footer-badge">
+        <img :src="boCongThuongBadge" alt="Đã đăng ký Bộ Công Thương" />
       </div>
     </div>
 
@@ -237,6 +241,22 @@ const normalizeHotline = (value) => {
   cursor: pointer;
 }
 
+.footer-badge {
+  display: flex;
+  justify-content: flex-start;
+  padding: 0 0 2rem;
+}
+
+.footer-badge img {
+  display: block;
+  width: min(260px, 100%);
+  height: auto;
+  padding: 0.45rem 0.65rem;
+  border-radius: 6px;
+  background: #fff;
+  object-fit: contain;
+}
+
 .footer-bottom {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding: 2rem 0;
@@ -291,6 +311,11 @@ const normalizeHotline = (value) => {
     justify-content: center;
     text-align: center;
     gap: 1.5rem;
+  }
+
+  .footer-badge {
+    justify-content: center;
+    padding-bottom: 1.75rem;
   }
 
   .copyright-info {

@@ -100,6 +100,7 @@ onMounted(fetchContacts)
     right: 14px;
     bottom: 76px;
     gap: 10px;
+    transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
   }
 
   .zalo-btn,

@@ -26,7 +26,7 @@
 }
 
 body {
-  font-family: 'Outfit', 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Outfit', sans-serif;
   color: var(--text-main);
   background: var(--bg-main);
   line-height: 1.6;
@@ -49,7 +49,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Montserrat', 'Outfit', sans-serif;
   font-weight: 700;
   color: var(--secondary);
 }

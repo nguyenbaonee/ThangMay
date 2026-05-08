@@ -1,5 +1,5 @@
 <script setup>
-import { ShoppingCart, CheckCircle, ArrowLeft, Phone, Share2, Download, Loader2 } from 'lucide-vue-next'
+import { CheckCircle, Download, Loader2, Share2, ShieldCheck, UserRoundCheck } from 'lucide-vue-next'
 import { ref, onMounted, computed, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import productApi from '@/api/productApi'
@@ -12,12 +12,10 @@ const activeTab = ref('specs')
 const tabRefs = ref({})
 
 const resolveImageUrl = (item) => item?.publicUrl || item?.url || item || ''
-const resolveCategoryName = (p) => p?.categoryObj?.name || p?.category?.name || p?.category || ''
+const resolveCategoryName = (p) => p?.categoryObj?.name || p?.category?.name || p?.category || 'Thang máy'
 const setTabRef = (el, key) => {
   if (el) tabRefs.value[key] = el
 }
-
-const isUuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value || '')
 
 const fetchProduct = async () => {
   const productId = route.params.id
@@ -25,14 +23,11 @@ const fetchProduct = async () => {
     isLoading.value = false
     return
   }
+
   try {
     const res = await productApi.getById(productId)
     product.value = res.data
-    if (product.value?.images?.length > 0) {
-      activeImage.value = resolveImageUrl(product.value.images[0])
-    } else if (product.value?.thumbnail) {
-      activeImage.value = resolveImageUrl(product.value.thumbnail.publicUrl || product.value.thumbnail.url)
-    }
+    if (galleryImages.value.length > 0) activeImage.value = galleryImages.value[0]
   } catch (error) {
     console.error('Error fetching product detail:', error)
     product.value = null
@@ -63,123 +58,146 @@ const galleryImages = computed(() => {
   }
   return imgs
 })
+
+const displayPrice = computed(() => {
+  const value = product.value?.price
+  if (!value || String(value).trim() === '0') return 'Liên hệ để biết giá'
+  return value
+})
+
+const fallbackSpecs = computed(() => ([
+  { label: 'Tải trọng', value: product.value?.loadCapacity ? `${product.value.loadCapacity} kg` : '750kg' },
+  { label: 'Tốc độ', value: product.value?.speed ? `${product.value.speed} m/s` : '1.0 - 1.75 m/s' },
+  { label: 'Số điểm dừng', value: product.value?.stops ? `${product.value.stops} điểm dừng` : '2 - 5 điểm dừng' },
+  { label: 'Hệ thống điều khiển', value: product.value?.controlSystem || 'Biến tần VVVF' },
+  { label: 'Nguồn điện', value: product.value?.powerSupply || '3 pha, 380V - 50Hz' },
+  { label: 'Loại cửa', value: product.value?.doorType || 'Cửa tự động' }
+]))
+
+const specs = computed(() => {
+  const productSpecs = product.value?.specs || []
+  return productSpecs.length > 0
+    ? productSpecs.map(spec => ({
+        label: spec.label,
+        value: `${spec.value || ''}${spec.unit ? ` ${spec.unit}` : ''}`.trim()
+      }))
+    : fallbackSpecs.value
+})
 </script>
 
 <template>
   <div class="product-detail">
-
-    <div v-if="isLoading" class="flex-center py-5">
-      <Loader2 class="spinner text-primary" :size="48" />
+    <div v-if="isLoading" class="detail-loader">
+      <Loader2 class="spinner" :size="48" />
     </div>
 
-    <div v-else-if="!product" class="container text-center py-5 empty-state">
+    <div v-else-if="!product" class="container empty-state">
       <h2>Không tìm thấy sản phẩm</h2>
       <p>Sản phẩm bạn đang tìm kiếm không tồn tại hoặc đã bị gỡ bỏ.</p>
     </div>
 
     <template v-else>
-      <section class="section-padding container">
-        <div class="product-main-grid">
-          <!-- Gallery -->
-          <div class="gallery-side">
-            <div class="main-image glass animate-fade-in">
-              <img v-if="activeImage" :src="activeImage" :alt="product.name" />
-              <div v-else class="flex-center h-100 bg-light text-muted">No Image</div>
-            </div>
-            <div v-if="galleryImages.length > 1" class="thumbnails animate-fade-in">
-              <div 
-                v-for="img in galleryImages" 
-                :key="img" 
-                :class="['thumb', activeImage === img ? 'active' : '']"
-                @click="activeImage = img"
-              >
-                <img :src="img" :alt="product.name" />
+      <section class="detail-hero">
+        <div class="container">
+          <div class="detail-grid">
+            <div class="gallery-panel">
+              <div class="main-image">
+                <img v-if="activeImage" :src="activeImage" :alt="product.name" />
+                <div v-else class="image-empty">No Image</div>
               </div>
-            </div>
-          </div>
-
-          <!-- Info -->
-          <div class="info-side animate-fade-in">
-            <h4 class="label">{{ resolveCategoryName(product) }}</h4>
-            <h1>{{ product.name || 'Chưa có tiêu đề' }}</h1>
-            <p class="price-big">{{ product.price || 'Liên hệ' }}</p>
-            <p class="short-desc">{{ product.summary || product.desc || 'Chưa có mô tả ngắn.' }}</p>
-            
-            <div class="action-btns">
-              <router-link to="/contact" class="btn btn-primary lg">Yêu cầu báo giá</router-link>
-              <div class="secondary-actions">
-                <button class="icon-btn" title="Chia sẻ"><Share2 :size="20" /></button>
-                <button class="icon-btn" title="Tải Brochure"><Download :size="20" /></button>
+              <div v-if="galleryImages.length > 1" class="thumb-row">
+                <button
+                  v-for="img in galleryImages"
+                  :key="img"
+                  type="button"
+                  :class="['thumb', activeImage === img ? 'active' : '']"
+                  @click="activeImage = img"
+                >
+                  <img :src="img" :alt="product.name" />
+                </button>
               </div>
             </div>
 
-            <div class="quick-info">
-              <div class="info-item">
-                <CheckCircle :size="20" class="primary-icon" />
-                <span>Bảo hành 24 tháng chính hãng</span>
+            <aside class="summary-panel">
+              <p class="eyebrow">{{ resolveCategoryName(product) }}</p>
+              <h1>{{ product.name || 'Chưa có tiêu đề' }}</h1>
+              <div class="price-block">
+                <span>Giá:</span>
+                <strong>{{ displayPrice }}</strong>
               </div>
-              <div class="info-item">
-                <CheckCircle :size="20" class="primary-icon" />
-                <span>Tư vấn và đo đạc miễn phí</span>
+
+              <div class="action-row">
+                <router-link to="/contact" class="quote-btn">Yêu cầu báo giá</router-link>
+                <button class="round-btn" type="button" title="Chia sẻ"><Share2 :size="22" /></button>
+                <button class="round-btn" type="button" title="Tải brochure"><Download :size="22" /></button>
               </div>
-            </div>
+
+              <div class="benefit-box">
+                <div class="benefit-item">
+                  <span class="benefit-icon"><ShieldCheck :size="24" /></span>
+                  <span>Bảo hành 24 tháng chính hãng</span>
+                </div>
+                <div class="benefit-item">
+                  <span class="benefit-icon"><UserRoundCheck :size="24" /></span>
+                  <span>Tư vấn và đo đạc miễn phí</span>
+                </div>
+              </div>
+            </aside>
           </div>
         </div>
       </section>
 
-      <!-- Details Tabs -->
-      <section class="section-padding bg-light">
+      <section class="detail-tabs-section">
         <div class="container">
-          <div class="tabs-header">
-            <button 
-              :ref="el => setTabRef(el, 'specs')"
-              :class="['tab-link', activeTab === 'specs' ? 'active' : '']"
-              @click="activeTab = 'specs'"
-            >
-              Thông số kỹ thuật
-            </button>
-            <button 
-              :ref="el => setTabRef(el, 'features')"
-              :class="['tab-link', activeTab === 'features' ? 'active' : '']"
-              @click="activeTab = 'features'"
-            >
-              Tính năng nổi bật
-            </button>
-            <button 
-              :ref="el => setTabRef(el, 'content')"
-              :class="['tab-link', activeTab === 'content' ? 'active' : '']"
-              @click="activeTab = 'content'"
-            >
-              Chi tiết sản phẩm
-            </button>
-          </div>
+          <div class="tabs-card">
+            <div class="tabs-header">
+              <button
+                :ref="el => setTabRef(el, 'specs')"
+                :class="['tab-link', activeTab === 'specs' ? 'active' : '']"
+                type="button"
+                @click="activeTab = 'specs'"
+              >
+                Thông số kỹ thuật
+              </button>
+              <button
+                :ref="el => setTabRef(el, 'features')"
+                :class="['tab-link', activeTab === 'features' ? 'active' : '']"
+                type="button"
+                @click="activeTab = 'features'"
+              >
+                Tính năng nổi bật
+              </button>
+              <button
+                :ref="el => setTabRef(el, 'content')"
+                :class="['tab-link', activeTab === 'content' ? 'active' : '']"
+                type="button"
+                @click="activeTab = 'content'"
+              >
+                Chi tiết sản phẩm
+              </button>
+            </div>
 
-          <div class="tab-content glass mt-4 p-4">
-            <!-- Specs -->
-            <div v-if="activeTab === 'specs'" class="specs-grid animate-fade-in">
-              <template v-if="product.specs && product.specs.length > 0">
-                <div v-for="spec in product.specs" :key="spec.label" class="spec-row">
-                  <span class="label-spec">{{ spec.label }}</span>
-                  <span class="value-spec">{{ spec.value }} {{ spec.unit || '' }}</span>
+            <div class="tab-content">
+              <div v-if="activeTab === 'specs'" class="spec-table">
+                <div v-for="spec in specs" :key="spec.label" class="spec-cell">
+                  <span>{{ spec.label }}</span>
+                  <strong>{{ spec.value || 'Đang cập nhật' }}</strong>
                 </div>
-              </template>
-              <div v-else class="text-center py-4 text-muted col-span-full">Chưa cập nhật thông số.</div>
-            </div>
+              </div>
 
-            <!-- Features -->
-            <div v-if="activeTab === 'features'" class="features-list animate-fade-in">
-              <ul v-if="product.features && product.features.length > 0" class="custom-list">
-                <li v-for="feature in product.features" :key="feature">
-                  <CheckCircle :size="18" class="li-icon" />
-                  <span>{{ feature }}</span>
-                </li>
-              </ul>
-              <div v-else class="text-center py-4 text-muted">Chưa cập nhật tính năng.</div>
-            </div>
+              <div v-if="activeTab === 'features'" class="features-list">
+                <ul v-if="product.features && product.features.length > 0">
+                  <li v-for="feature in product.features" :key="feature">
+                    <CheckCircle :size="20" />
+                    <span>{{ feature }}</span>
+                  </li>
+                </ul>
+                <p v-else class="empty-tab">Chưa cập nhật tính năng.</p>
+              </div>
 
-            <!-- Content -->
-            <div v-if="activeTab === 'content'" class="product-desc animate-fade-in">
-              <div class="rich-content" v-html="product.desc || 'Chưa có nội dung chi tiết.'"></div>
+              <div v-if="activeTab === 'content'" class="product-desc">
+                <div class="rich-content" v-html="product.desc || 'Chưa có nội dung chi tiết.'"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -189,256 +207,343 @@ const galleryImages = computed(() => {
 </template>
 
 <style scoped>
-/* ── Product detail wrapper ── */
 .product-detail {
-  padding-top: 130px;
+  background: #fff;
+  color: #061b36;
+  padding-top: 122px;
 }
 
+.detail-loader,
 .empty-state {
-  padding: 0.5rem 0 1rem;
-}
-
-/* ── Product main grid (mobile-first = 1 col) ── */
-.product-main-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
-  align-items: flex-start;
-}
-
-.gallery-side {
+  min-height: 420px;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.spinner {
+  color: var(--primary);
+  animation: spin 1s linear infinite;
+}
+
+.detail-hero {
+  padding: 28px 0 54px;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(300px, 0.7fr);
+  gap: 72px;
+  align-items: start;
+}
+
+.gallery-panel {
+  min-width: 0;
 }
 
 .main-image {
-  height: 280px;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: var(--shadow);
-}
-
-.main-image img {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.thumbnails {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.thumb {
-  width: 64px;
-  height: 64px;
-  border-radius: 8px;
+  aspect-ratio: 1.35 / 1;
+  border-radius: 14px;
   overflow: hidden;
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: var(--transition);
+  background: #eef1f5;
 }
 
-.thumb.active {
-  border-color: var(--primary);
-}
-
+.main-image img,
 .thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
-/* ── Info side ── */
-.info-side .label {
-  color: var(--primary);
-  font-weight: 600;
-  font-style: italic;
-  font-size: 0.95rem;
-  margin-bottom: 0.6rem;
+.image-empty {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #7f8792;
 }
 
-.info-side h1 {
-  font-size: 2.1rem;
-  margin-bottom: 0.75rem;
-  line-height: 1.25;
-  color: var(--secondary);
-}
-
-.price-big {
-  font-size: 1.6rem;
-  color: var(--primary);
-  font-weight: 800;
-  margin-bottom: 1rem;
-}
-
-.short-desc {
-  font-size: 0.9rem;
-  color: var(--text-light);
-  line-height: 1.7;
-  margin-bottom: 1.5rem;
-}
-
-.action-btns {
+.thumb-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.thumb {
+  width: 64px;
+  height: 52px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  background: #f4f5f7;
+  transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.thumb:hover,
+.thumb.active {
+  border-color: #061b36;
+  box-shadow: 0 10px 24px rgba(6, 27, 54, 0.14);
+  transform: translateY(-2px);
+}
+
+.summary-panel {
+  max-width: 460px;
+  padding: 8px 0 0;
+}
+
+.eyebrow {
+  color: #c3a154;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.summary-panel h1 {
+  color: #061b36;
+  font-size: clamp(30px, 3.3vw, 40px);
+  line-height: 1.08;
+  font-weight: 900;
+  margin-bottom: 16px;
+  max-width: 620px;
+}
+
+.price-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.price-block span {
+  font-size: 15px;
+  color: #061b36;
+  font-weight: 600;
+}
+
+.price-block strong {
+  color: #b99a4a;
+  font-size: clamp(26px, 2.9vw, 34px);
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.action-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
   flex-wrap: wrap;
 }
 
-.secondary-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.icon-btn {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  border: 1.5px solid #ddd;
-  background: white;
-  color: var(--text-light);
-  cursor: pointer;
-  display: flex;
+.quote-btn {
+  display: inline-flex;
+  min-width: 174px;
+  height: 44px;
   align-items: center;
   justify-content: center;
-  transition: var(--transition);
+  padding: 0 22px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #d6b65b, #b39143);
+  color: #061b36;
+  font-size: 14px;
+  font-weight: 800;
+  box-shadow: 0 16px 34px rgba(179, 145, 67, 0.24);
+  transition: transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease;
+  text-decoration: none;
 }
 
-.icon-btn:hover {
-  border-color: var(--primary);
-  color: var(--primary);
+.quote-btn:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(179, 145, 67, 0.35);
+  filter: brightness(1.1);
 }
 
-.quick-info {
+.round-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 2px solid #061b36;
+  background: #fff;
+  color: #061b36;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.22s ease, background 0.22s ease, color 0.22s ease;
+}
+
+.round-btn:hover {
+  transform: translateY(-2px);
+  background: #061b36;
+  color: #fff;
+}
+
+.benefit-box {
+  width: min(100%, 430px);
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fff9e9, #f7f0db);
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 14px;
 }
 
-.info-item {
+.benefit-item {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  font-size: 0.9rem;
-  font-weight: 500;
-  color: var(--text-main);
+  gap: 13px;
+  color: #061b36;
+  font-size: 14px;
+  font-weight: 600;
 }
 
-.primary-icon {
-  color: var(--primary);
-  flex-shrink: 0;
+.benefit-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #d7b85f, #b99544);
+  color: #061b36;
+  flex: 0 0 auto;
 }
 
-/* ── Tabs ── */
+.detail-tabs-section {
+  padding: 42px 0 64px;
+  background: #f5f6f8;
+}
+
+.tabs-card {
+  background: #fff;
+  border: 1px solid #d8dde6;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 18px 50px rgba(6, 27, 54, 0.06);
+}
+
 .tabs-header {
-  display: flex;
-  gap: 1.5rem;
-  border-bottom: 1px solid #e5e5e5;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-  scroll-snap-type: x proximity;
-}
-
-.tabs-header::-webkit-scrollbar {
-  display: none;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-bottom: 1px solid #d8dde6;
+  background: #fbfbfc;
 }
 
 .tab-link {
-  background: none;
-  border: none;
-  padding: 0.9rem 0;
-  font-weight: 600;
-  font-size: 1rem;
-  color: var(--text-light);
+  min-height: 58px;
+  border: 0;
+  border-right: 1px solid #d8dde6;
+  background: transparent;
+  color: #161b22;
+  font-size: 18px;
+  font-weight: 500;
   cursor: pointer;
   position: relative;
-  white-space: nowrap;
-  flex: 0 0 auto;
-  scroll-snap-align: start;
-  transition: color 0.2s;
+}
+
+.tab-link:last-child {
+  border-right: 0;
 }
 
 .tab-link.active {
-  color: var(--primary);
+  color: #061b36;
+  background: #fff;
+  font-weight: 800;
 }
 
-.tab-link.active::after {
+.tab-link.active::before {
   content: '';
   position: absolute;
-  bottom: -1px;
+  top: 0;
   left: 0;
-  width: 100%;
-  height: 2px;
-  background: var(--primary);
-  border-radius: 2px;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, #061b36 0 52%, #c3a154 52% 100%);
 }
 
-.specs-grid {
+.tab-content {
+  padding: 34px 30px 32px;
+}
+
+.spec-table {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.75rem;
+  grid-template-columns: repeat(4, 1fr);
+  border: 1px solid #dde2ea;
+  border-bottom: 0;
+  border-right: 0;
 }
 
-.spec-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 1rem 1.25rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-}
-
-.label-spec {
-  color: var(--text-light);
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
-.value-spec {
-  font-weight: 700;
-  color: var(--secondary);
-  font-size: 0.9rem;
-}
-
-.custom-list {
+.spec-cell {
+  min-height: 68px;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 18px;
+  border-right: 1px solid #dde2ea;
+  border-bottom: 1px solid #dde2ea;
+  background: #fff;
 }
 
-.custom-list li {
+.spec-cell:nth-child(8n + 1),
+.spec-cell:nth-child(8n + 2),
+.spec-cell:nth-child(8n + 3),
+.spec-cell:nth-child(8n + 4) {
+  background: #f2f4f8;
+}
+
+.spec-cell span {
+  color: #525a66;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.spec-cell strong {
+  color: #111827;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.features-list ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 28px;
+}
+
+.features-list li {
   display: flex;
-  gap: 0.8rem;
-  align-items: center;
-  font-size: 0.95rem;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #27313d;
 }
 
-.li-icon {
-  color: var(--primary);
-  flex-shrink: 0;
+.features-list svg {
+  color: #b99544;
+  flex: 0 0 auto;
+  margin-top: 4px;
 }
 
 .rich-content {
-  line-height: 1.8;
-  color: var(--text-main);
-  font-size: 0.95rem;
+  color: #27313d;
+  font-size: 16px;
+  line-height: 1.85;
 }
 
-.flex-center {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.h-100 { height: 100%; }
-
-.spinner {
-  animation: spin 1s linear infinite;
+.empty-tab {
+  text-align: center;
+  color: #7a8290;
+  padding: 28px 0;
 }
 
 @keyframes spin {
@@ -446,170 +551,166 @@ const galleryImages = computed(() => {
   to { transform: rotate(360deg); }
 }
 
-.col-span-full {
-  grid-column: 1 / -1;
-}
-
-/* ── DESKTOP overrides (992px+) ── */
-@media (min-width: 993px) {
-  .py-subnav {
-    padding-top: 130px;
-    padding-bottom: 16px;
+@media (max-width: 992px) {
+  .product-detail {
+    padding-top: 92px;
   }
 
-  .product-main-grid {
-    grid-template-columns: 1.15fr 1fr;
-    gap: 3.5rem;
+  .detail-hero {
+    padding: 22px 0 40px;
   }
 
-  .main-image {
-    height: 420px;
-    border-radius: 10px;
-  }
-
-  .thumb {
-    width: 72px;
-    height: 72px;
-  }
-
-  .thumbnails {
-    gap: 0.75rem;
-  }
-
-  .info-side h1 {
-    font-size: 2.4rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .price-big {
-    font-size: 2rem;
-    margin-bottom: 1rem;
-  }
-
-  .short-desc {
-    font-size: 0.92rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .action-btns {
-    margin-bottom: 1.75rem;
-    gap: 0.85rem;
-  }
-
-  .tabs-header {
-    gap: 2rem;
-  }
-
-  .tab-link {
-    font-size: 1rem;
-    padding: 1rem 0;
-  }
-
-  .specs-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-  }
-}
-
-@media (max-width: 768px) {
-  .py-subnav {
-    padding-top: 124px;
-    padding-bottom: 8px;
-  }
-
-  .back-link {
-    font-size: 0.9rem;
-    gap: 0.4rem;
-  }
-
-  .specs-grid {
+  .detail-grid {
     grid-template-columns: 1fr;
-  }
-
-  .tabs-header {
-    gap: 0.75rem;
-    padding-bottom: 0.25rem;
-  }
-
-  .tab-link {
-    font-size: 1rem;
-    padding: 0.9rem 0;
-  }
-
-  .action-btns {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
-
-  .secondary-actions {
-    justify-content: center;
+    gap: 24px;
   }
 
   .main-image {
-    height: 280px;
+    aspect-ratio: 1.45 / 1;
   }
 
-  .info-side h1 {
-    font-size: 2.1rem;
+  .summary-panel h1 {
+    font-size: clamp(28px, 6.5vw, 38px);
+    margin-bottom: 18px;
   }
 
-  .price-big {
-    font-size: 1.6rem;
-    margin-bottom: 1.25rem;
+  .tabs-header {
+    display: flex;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
 
-  .short-desc {
-    margin-bottom: 2rem;
+  .tabs-header::-webkit-scrollbar {
+    display: none;
   }
 
-  .spec-row {
-    padding: 1rem;
-    gap: 0.75rem;
+  .tab-link {
+    flex: 0 0 auto;
+    min-width: 190px;
+    font-size: 16px;
   }
 
   .tab-content {
-    padding: 1rem !important;
+    padding: 24px 16px;
   }
 
-  .empty-state {
-    padding-top: 0.25rem;
-    padding-bottom: 0.5rem;
-    min-height: 0;
+  .spec-table {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 
-@media (max-width: 480px) {
-  .py-subnav {
-    padding-top: 116px;
+@media (max-width: 640px) {
+  .product-detail {
+    padding-top: 78px;
+  }
+
+  .detail-hero {
+    padding: 16px 0 28px;
   }
 
   .main-image {
-    height: 220px;
+    aspect-ratio: 1.2 / 1;
+    border-radius: 12px;
+  }
+
+  .thumb-row {
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
   }
 
   .thumb {
-    width: 64px;
-    height: 64px;
+    width: 50px;
+    min-width: 50px;
+    height: 40px;
+    border-radius: 7px;
   }
 
-  .info-side h1 {
-    font-size: 1.8rem;
+  .summary-panel {
+    padding-top: 0;
   }
 
-  .empty-state {
-    padding-top: 0.25rem;
-    padding-bottom: 0.5rem;
-    min-height: 0;
+  .eyebrow {
+    margin-bottom: 8px;
   }
 
-  .tabs-header {
-    gap: 0.5rem;
+  .summary-panel h1 {
+    font-size: 27px;
+  }
+
+  .price-block span {
+    font-size: 16px;
+  }
+
+  .price-block strong {
+    font-size: 28px;
+  }
+
+  .action-row {
+    gap: 10px;
+  }
+
+  .quote-btn {
+    width: 100%;
+    min-width: 0;
+    height: 48px;
+    font-size: 15px;
+  }
+
+  .round-btn {
+    width: 46px;
+    height: 46px;
+  }
+
+  .benefit-box {
+    padding: 15px;
+    gap: 12px;
+  }
+
+  .benefit-item {
+    font-size: 15px;
+    gap: 12px;
+  }
+
+  .benefit-icon {
+    width: 42px;
+    height: 42px;
+  }
+
+  .detail-tabs-section {
+    padding: 28px 0 48px;
+  }
+
+  .tabs-card {
+    border-radius: 12px;
   }
 
   .tab-link {
-    font-size: 0.95rem;
+    min-width: 152px;
+    min-height: 54px;
+    font-size: 14px;
+  }
+
+  .spec-table {
+    grid-template-columns: 1fr;
+  }
+
+  .spec-cell:nth-child(n) {
+    background: #fff;
+  }
+
+  .spec-cell:nth-child(odd) {
+    background: #f2f4f8;
+  }
+
+  .features-list ul {
+    grid-template-columns: 1fr;
+  }
+
+  .features-list li,
+  .rich-content {
+    font-size: 15px;
   }
 }
 </style>

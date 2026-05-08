@@ -132,7 +132,7 @@ const submitForm = async () => {
                     <input type="email" v-model="formData.email" placeholder="VD: example@mail.com" />
                 </div>
             </div>
-            <div class="form-group">
+            <div class="form-group service-group">
                 <label>Dịch vụ quan tâm</label>
                 <select v-model="formData.subject">
                     <option value="Tư vấn lắp đặt">Tư vấn lắp đặt</option>
@@ -142,7 +142,7 @@ const submitForm = async () => {
                     <option value="Hợp tác đại lý">Hợp tác đại lý</option>
                 </select>
             </div>
-            <div class="form-group">
+            <div class="form-group message-group">
                 <label>Ghi chú yêu cầu</label>
                 <textarea v-model="formData.message" rows="4" placeholder="VD: Tôi muốn lắp thang máy kính cho nhà 4 tầng..."></textarea>
             </div>
@@ -382,7 +382,7 @@ button[type="submit"] {
 
 @media (max-width: 768px) {
   .contact > .subpage-hero + .section-padding {
-    padding-top: 128px;
+    padding-top: 104px;
     padding-left: 1rem;
     padding-right: 1rem;
   }
@@ -391,8 +391,22 @@ button[type="submit"] {
     gap: 1.5rem;
   }
 
+  .contact-form-side {
+    order: 1;
+  }
+
+  .contact-info-side {
+    order: 2;
+  }
+
   .contact-info-side {
     text-align: center;
+  }
+
+  .contact-info-side .label,
+  .contact-info-side h2,
+  .contact-info-side > p {
+    display: none;
   }
 
   .label {
@@ -415,6 +429,14 @@ button[type="submit"] {
 
   .info-cards {
     gap: 0.9rem;
+    padding: 1rem;
+    border: 1px solid rgba(0, 45, 94, 0.08);
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.86);
+    box-shadow:
+      0 18px 42px rgba(8, 15, 30, 0.07),
+      -8px 0 22px rgba(0, 45, 94, 0.06),
+      8px 0 22px rgba(0, 45, 94, 0.06);
   }
 
   .info-card {
@@ -443,28 +465,88 @@ button[type="submit"] {
   .contact-form-side {
     padding: 1.4rem;
     border-radius: 24px;
-    box-shadow: 0 18px 42px rgba(8, 15, 30, 0.08);
+    border: 1px solid rgba(0, 45, 94, 0.08);
+    box-shadow:
+      0 18px 42px rgba(8, 15, 30, 0.08),
+      -10px 0 24px rgba(0, 45, 94, 0.08),
+      10px 0 24px rgba(0, 45, 94, 0.08);
   }
 
   .contact-form-side h3 {
-    font-size: 1.75rem;
-    line-height: 1.2;
-    margin-bottom: 0.75rem;
+    font-size: 1.7rem;
+    line-height: 1.12;
+    letter-spacing: 0;
+    margin-bottom: 0.85rem;
   }
 
   .contact-form-side > p {
-    font-size: 0.98rem;
-    margin-bottom: 1.1rem;
+    font-size: 0.96rem;
+    line-height: 1.65;
+    margin-bottom: 1.2rem;
   }
 
   .form-group {
-    margin-bottom: 1rem;
+    margin-bottom: 0;
+  }
+
+  .contact-form-side form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 0.95rem;
+    row-gap: 1.05rem;
+    align-items: start;
+  }
+
+  .contact-form-side form > .form-row {
+    display: contents;
+  }
+
+  .message-group {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    width: 100%;
+  }
+
+  .contact-form-side form > button[type="submit"] {
+    grid-column: 1 / -1;
+  }
+
+  label {
+    margin-bottom: 0.5rem;
+    color: #30363a;
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0;
+  }
+
+  .service-group label {
+    white-space: nowrap;
+    font-size: 0.78rem;
   }
 
   input, select, textarea {
-    padding: 0.95rem 1rem;
-    border-radius: 14px;
-    font-size: 0.98rem;
+    min-height: 50px;
+    padding: 0.72rem 0.82rem;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 500;
+    line-height: 1.35;
+  }
+
+  select {
+    padding-left: 0.72rem;
+    padding-right: 1.85rem;
+    text-align: left;
+    text-align-last: left;
+    background-position: right 0.7rem center;
+  }
+
+  textarea {
+    min-height: 120px;
+    padding: 0.9rem 1rem;
+    line-height: 1.45;
   }
 
   button[type="submit"] {
