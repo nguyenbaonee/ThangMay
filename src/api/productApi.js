@@ -37,6 +37,8 @@ export const productApi = {
   delete: (id) => api.delete(`/products/${id}`),
 
   toggleActive: (id, active) => api.patch(`/products/${id}/toggle-active?active=${active}`),
+
+  toggleFeatured: (id, featured) => api.patch(`/products/${id}/toggle-featured?featured=${featured}`),
 }
 
 export default productApi

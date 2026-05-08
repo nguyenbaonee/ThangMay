@@ -83,6 +83,12 @@ const syncGalleryIds = () => {
   form.value.imageIds = form.value.galleryPreviews.map(img => img.id).join(';')
 }
 
+const normalizeProduct = (product) => ({
+  ...product,
+  isActive: Boolean(product.isActive ?? product.active),
+  isFeatured: Boolean(product.isFeatured ?? product.featured)
+})
+
 // ── Data Fetching ───
 const fetchData = async () => {
   isLoading.value = true
@@ -92,7 +98,9 @@ const fetchData = async () => {
       productApi.search({ keyword: searchQuery.value })
     ])
     if (catRes.status === 'fulfilled') categories.value = catRes.value?.data || []
-    if (prodRes.status === 'fulfilled') products.value = prodRes.value?.data?.content || prodRes.value?.data || []
+    if (prodRes.status === 'fulfilled') {
+      products.value = (prodRes.value?.data?.content || prodRes.value?.data || []).map(normalizeProduct)
+    }
   } catch (error) {
     console.error('Error fetching products:', error)
     products.value = []
@@ -122,7 +130,7 @@ const openCreate = () => {
 }
 const openEdit = (p) => {
   modalMode.value = 'edit'
-  form.value = JSON.parse(JSON.stringify(p))
+  form.value = JSON.parse(JSON.stringify(normalizeProduct(p)))
   form.value.thumbnailPreview = p.thumbnail?.publicUrl || p.thumbnail?.url || (typeof p.thumbnail === 'string' ? p.thumbnail : '')
   
   // Map existing images to galleryPreviews
@@ -176,6 +184,18 @@ const toggleActive = async (p) => {
   try { await productApi.toggleActive(p.id, newVal) } catch {}
   p.isActive = newVal
   toast.info(newVal ? 'Đã bật hiển thị' : 'Đã ẩn sản phẩm')
+}
+
+const toggleFeatured = async (p) => {
+  const newVal = !p.isFeatured
+  try {
+    const res = await productApi.toggleFeatured(p.id, newVal)
+    const updated = res?.data?.data || res?.data || {}
+    p.isFeatured = Boolean(updated.isFeatured ?? updated.featured ?? newVal)
+    toast.success(p.isFeatured ? 'Da bat san pham noi bat' : 'Da tat san pham noi bat')
+  } catch (error) {
+    toast.error('Khong the cap nhat san pham noi bat!')
+  }
 }
 
 const triggerDelete = (id) => { targetDeleteId.value = id; isConfirmOpen.value = true }
@@ -240,7 +260,7 @@ const removeSpec = (i) => { if (form.value.specs.length > 1) form.value.specs.sp
               <td><span class="badge badge-category">{{ getCategoryName(p) }}</span></td>
               <td class="text-primary font-bold text-sm">{{ p.price || 'Liên hệ' }}</td>
               <td class="text-center">
-                <button :class="['star-btn', p.isFeatured ? 'featured' : '']" @click="p.isFeatured = !p.isFeatured">
+                <button :class="['star-btn', p.isFeatured ? 'featured' : '']" @click="toggleFeatured(p)">
                   <Star :size="16" :fill="p.isFeatured ? 'currentColor' : 'none'" />
                 </button>
               </td>

@@ -181,7 +181,26 @@ const getCategoryIcon = (category, index) => {
   return defaultCategories[(index % (defaultCategories.length - 1)) + 1]?.icon || Grid2X2
 }
 
-const getCategoryImage = (category, index) => category.iconUrl || categoryImages[index % categoryImages.length]
+const getCategoryImage = (category, index) =>
+  category?.iconUrl ||
+  category?.icon ||
+  category?.imageUrl ||
+  category?.image?.publicUrl ||
+  category?.image?.url ||
+  category?.thumbnail?.publicUrl ||
+  category?.thumbnail?.url ||
+  categoryImages[index % categoryImages.length]
+
+const hasCategoryImage = (category) =>
+  Boolean(
+    category?.iconUrl ||
+    category?.icon ||
+    category?.imageUrl ||
+    category?.image?.publicUrl ||
+    category?.image?.url ||
+    category?.thumbnail?.publicUrl ||
+    category?.thumbnail?.url
+  )
 
 const fetchCategories = async () => {
   try {
@@ -262,7 +281,8 @@ watch(selectedSpeeds, fetchProducts, { deep: true })
                 type="button"
                 @click="selectCategory(cat.id)"
               >
-                <component :is="getCategoryIcon(cat, index)" :size="17" />
+                <img v-if="cat.id !== 'all' && hasCategoryImage(cat)" :src="getCategoryImage(cat, index)" :alt="cat.name" />
+                <component v-else :is="getCategoryIcon(cat, index)" :size="17" />
                 <span>{{ displayCategoryName(cat) }}</span>
                 <ChevronRight v-if="cat.id !== 'all'" :size="15" />
               </button>
@@ -569,8 +589,16 @@ watch(selectedSpeeds, fetchProducts, { deep: true })
   transition: 0.22s ease;
 }
 
-.sidebar-category svg {
+.sidebar-category svg,
+.sidebar-category img {
   color: var(--secondary);
+}
+
+.sidebar-category img {
+  display: block;
+  width: 17px;
+  height: 17px;
+  object-fit: cover;
 }
 
 .sidebar-category.active {
@@ -578,7 +606,8 @@ watch(selectedSpeeds, fetchProducts, { deep: true })
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
 }
 
-.sidebar-category.active svg {
+.sidebar-category.active svg,
+.sidebar-category.active img {
   color: #fff;
 }
 
@@ -1244,7 +1273,8 @@ watch(selectedSpeeds, fetchProducts, { deep: true })
   border-radius: 6px;
 }
 
-.sidebar-category svg {
+.sidebar-category svg,
+.sidebar-category img {
   box-sizing: content-box;
   padding: 0.52rem;
   color: #fff;
@@ -1252,11 +1282,20 @@ watch(selectedSpeeds, fetchProducts, { deep: true })
   border-radius: 5px;
 }
 
+.sidebar-category img {
+  box-sizing: border-box;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  object-fit: cover;
+}
+
 .sidebar-category:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 
-.sidebar-category.active svg {
+.sidebar-category.active svg,
+.sidebar-category.active img {
   background: rgba(255, 255, 255, 0.18);
 }
 
@@ -1507,7 +1546,8 @@ watch(selectedSpeeds, fetchProducts, { deep: true })
     background: transparent;
   }
 
-  .sidebar-category svg {
+  .sidebar-category svg,
+  .sidebar-category img {
     width: 56px;
     height: 56px;
     box-sizing: border-box;
@@ -1516,6 +1556,10 @@ watch(selectedSpeeds, fetchProducts, { deep: true })
     background: #fff;
     border: 1px solid rgba(193, 160, 82, 0.84);
     border-radius: 999px;
+  }
+
+  .sidebar-category img {
+    object-fit: cover;
   }
 
   .sidebar-category .lucide-chevron-right {
@@ -1529,7 +1573,8 @@ watch(selectedSpeeds, fetchProducts, { deep: true })
     box-shadow: none;
   }
 
-  .sidebar-category.active svg {
+  .sidebar-category.active svg,
+  .sidebar-category.active img {
     color: #fff;
     background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     border-color: transparent;

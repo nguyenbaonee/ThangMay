@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { ArrowRight, Headphones, Loader2, Settings, ShieldCheck, Zap } from 'lucide-vue-next'
 import productApi from '@/api/productApi'
 import bannerApi from '@/api/bannerApi'
@@ -10,10 +10,13 @@ const homeBanners = ref([])
 const activeBannerIndex = ref(0)
 let bannerInterval = null
 const bannerDelay = 3500
+const featuredLimit = 8
 
 const resolveProducts = (payload) => payload?.content || payload?.items || payload || []
 const resolveImageUrl = (product) => product?.thumbnail?.publicUrl || product?.thumbnail?.url || product?.images?.[0] || 'https://images.unsplash.com/photo-1621343110547-0d64f219c27c?q=80&w=1200'
 const activeHeroImage = () => homeBanners.value[activeBannerIndex.value]?.imageUrl || 'https://images.unsplash.com/photo-1629909613654-28e377c37b09?q=80&w=2200'
+const displayedFeaturedProducts = computed(() => featuredProducts.value.slice(0, featuredLimit))
+const hasMoreFeaturedProducts = computed(() => featuredProducts.value.length > featuredLimit)
 
 const services = [
   { title: 'Tư vấn - Thiết kế', icon: Settings, desc: 'Giải pháp tối ưu theo thực trạng công trình và định hướng thẩm mỹ của chủ đầu tư.' },
@@ -50,10 +53,10 @@ const fetchData = async () => {
   isLoading.value = true
   try {
     const [prodRes, bannerRes] = await Promise.all([
-      productApi.publicSearch({ featured: true, size: 3 }),
+      productApi.publicSearch({ featured: true, size: featuredLimit + 1 }),
       bannerApi.getPublic('CENTER')
     ])
-    featuredProducts.value = resolveProducts(prodRes.data).slice(0, 3)
+    featuredProducts.value = resolveProducts(prodRes.data)
     homeBanners.value = bannerRes.data || []
     startBannerTimer()
   } catch (error) {
@@ -165,7 +168,7 @@ onUnmounted(stopBannerTimer)
           <Loader2 class="spinner" :size="44" />
         </div>
         <div v-else class="product-grid">
-          <article v-for="product in featuredProducts" :key="product.id" class="product-card">
+          <article v-for="product in displayedFeaturedProducts" :key="product.id" class="product-card">
             <router-link :to="'/products/' + product.id" class="product-image" aria-label="Xem chi tiết sản phẩm">
               <img :src="resolveImageUrl(product)" :alt="product.name || 'Sản phẩm thang máy Misel'" />
             </router-link>
@@ -178,6 +181,11 @@ onUnmounted(stopBannerTimer)
               </router-link>
             </div>
           </article>
+        </div>
+        <div v-if="!isLoading && hasMoreFeaturedProducts" class="products-more">
+          <router-link to="/products" class="btn btn-dark">
+            Xem thêm <ArrowRight :size="16" />
+          </router-link>
         </div>
       </div>
     </section>
@@ -494,12 +502,13 @@ onUnmounted(stopBannerTimer)
 
 .product-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1.25rem;
   margin-top: 2.75rem;
 }
 
 .product-card {
+  overflow: hidden;
   background: #fff;
   transition: transform 0.28s ease, box-shadow 0.28s ease;
 }
@@ -529,7 +538,7 @@ onUnmounted(stopBannerTimer)
 }
 
 .product-info {
-  padding: 1.6rem 1.6rem 1.8rem;
+  padding: 1.15rem 1.15rem 1.25rem;
 }
 
 .product-info p {
@@ -543,7 +552,8 @@ onUnmounted(stopBannerTimer)
 .product-info h3 {
   margin-bottom: 0.6rem;
   color: #141b27;
-  font-size: 1.35rem;
+  font-size: 1.02rem;
+  line-height: 1.28;
 }
 
 .product-info span {
@@ -552,10 +562,17 @@ onUnmounted(stopBannerTimer)
   margin-bottom: 1.25rem;
   overflow: hidden;
   color: var(--text-light);
-  font-size: 0.95rem;
+  font-size: 0.84rem;
+  line-height: 1.55;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   line-clamp: 2;
+}
+
+.products-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 2.25rem;
 }
 
 .product-info a {
@@ -589,17 +606,26 @@ onUnmounted(stopBannerTimer)
   .services-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 900px) {
-  .intro-layout,
-  .product-grid {
+  .intro-layout {
     grid-template-columns: 1fr;
   }
 
   .intro-photo {
     max-width: 680px;
     margin: 0 auto;
+  }
+}
+
+@media (max-width: 560px) {
+  .product-grid {
+    grid-template-columns: 1fr;
   }
 }
 
