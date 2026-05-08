@@ -166,9 +166,9 @@ onUnmounted(stopBannerTimer)
         </div>
         <div v-else class="product-grid">
           <article v-for="product in featuredProducts" :key="product.id" class="product-card">
-            <div class="product-image">
+            <router-link :to="'/products/' + product.id" class="product-image" aria-label="Xem chi tiết sản phẩm">
               <img :src="resolveImageUrl(product)" :alt="product.name || 'Sản phẩm thang máy Misel'" />
-            </div>
+            </router-link>
             <div class="product-info">
               <p>{{ product.category?.name || 'Misel elevator' }}</p>
               <h3>{{ product.name || 'Sản phẩm thang máy cao cấp' }}</h3>
@@ -510,7 +510,10 @@ onUnmounted(stopBannerTimer)
 }
 
 .product-image {
+  display: block;
   overflow: hidden;
+  color: inherit;
+  cursor: pointer;
 }
 
 .product-image img {

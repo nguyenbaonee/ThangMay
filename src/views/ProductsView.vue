@@ -349,11 +349,11 @@ watch(selectedSpeeds, fetchProducts, { deep: true })
               :key="product.id"
               class="product-card animate-fade-in"
             >
-              <div class="product-image">
+              <router-link :to="{ name: 'product-detail', params: { id: product.id } }" class="product-image" aria-label="Xem chi tiết sản phẩm">
                 <img :src="resolveImageUrl(product, index)" :alt="product.name || 'Sản phẩm thang máy Misel'" />
                 <span v-if="index === 0" class="product-badge gold">Bán chạy</span>
                 <span v-else-if="index === 2" class="product-badge blue">Mới</span>
-              </div>
+              </router-link>
 
               <div class="product-body">
                 <h3>{{ product.name || 'Thang máy Misel cao cấp' }}</h3>
@@ -758,8 +758,11 @@ watch(selectedSpeeds, fetchProducts, { deep: true })
 }
 
 .product-image {
+  display: block;
   position: relative;
   overflow: hidden;
+  color: inherit;
+  cursor: pointer;
 }
 
 .product-image img {
