@@ -98,7 +98,10 @@ const normalizeHotline = (value) => {
       <div class="container bottom-content">
         <div class="copyright-info">
           <p>&copy; 2024 Misel ELEVATOR. All rights reserved.</p>
-          <p class="company-info">{{ getVal('company_name') }} &nbsp;&nbsp; MST: {{ getVal('mst') }}</p>
+          <p class="company-info">
+            <span>{{ getVal('company_name') }}</span>
+            <span class="tax-info">MST: {{ getVal('mst') }}</span>
+          </p>
         </div>
         <div class="bottom-links">
           <a href="#">Điều khoản sử dụng</a>
@@ -300,10 +303,20 @@ const normalizeHotline = (value) => {
   }
 
   .company-info {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    column-gap: 14px;
+    row-gap: 2px;
     font-weight: 600;
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.9);
     font-size: 0.85rem;
+  }
+
+  .tax-info {
+    white-space: nowrap;
   }
 
   .bottom-links {
